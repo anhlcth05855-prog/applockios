@@ -1,0 +1,456 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA1000012C00000100000001 /* AppLockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000012C00000100000001 /* AppLockApp.swift */; };
+		AA1000022C00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB1000022C00000100000001 /* Assets.xcassets */; };
+		AA1000032C00000100000001 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000032C00000100000001 /* AppColors.swift */; };
+		AA1000042C00000100000001 /* LockType.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000042C00000100000001 /* LockType.swift */; };
+		AA1000052C00000100000001 /* AppItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000052C00000100000001 /* AppItem.swift */; };
+		AA1000062C00000100000001 /* IntruderRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000062C00000100000001 /* IntruderRecord.swift */; };
+		AA1000072C00000100000001 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000072C00000100000001 /* VaultItem.swift */; };
+		AA1000082C00000100000001 /* SecretNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000082C00000100000001 /* SecretNote.swift */; };
+		AA1000092C00000100000001 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000092C00000100000001 /* HapticManager.swift */; };
+		AA1000102C00000100000001 /* BiometricManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000102C00000100000001 /* BiometricManager.swift */; };
+		AA1000112C00000100000001 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000112C00000100000001 /* CameraManager.swift */; };
+		AA1000122C00000100000001 /* VaultManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000122C00000100000001 /* VaultManager.swift */; };
+		AA1000132C00000100000001 /* ScreenTimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000132C00000100000001 /* ScreenTimeManager.swift */; };
+		AA1000142C00000100000001 /* AppLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000142C00000100000001 /* AppLockManager.swift */; };
+		AA1000152C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000152C00000100000001 /* GlassCard.swift */; };
+		AA1000162C00000100000001 /* CyberHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000162C00000100000001 /* CyberHeader.swift */; };
+		AA1000172C00000100000001 /* PinPadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000172C00000100000001 /* PinPadView.swift */; };
+		AA1000182C00000100000001 /* PatternLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000182C00000100000001 /* PatternLockView.swift */; };
+		AA1000192C00000100000001 /* LockScreenOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000192C00000100000001 /* LockScreenOverlayView.swift */; };
+		AA1000202C00000100000001 /* SecuritySetupFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000202C00000100000001 /* SecuritySetupFlowView.swift */; };
+		AA1000212C00000100000001 /* AppRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000212C00000100000001 /* AppRowView.swift */; };
+		AA1000222C00000100000001 /* ShortcutsGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000222C00000100000001 /* ShortcutsGuideView.swift */; };
+		AA1000232C00000100000001 /* AppLockListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000232C00000100000001 /* AppLockListView.swift */; };
+		AA1000242C00000100000001 /* NoteEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000242C00000100000001 /* NoteEditorSheet.swift */; };
+		AA1000252C00000100000001 /* MediaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000252C00000100000001 /* MediaDetailView.swift */; };
+		AA1000262C00000100000001 /* VaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000262C00000100000001 /* VaultView.swift */; };
+		AA1000272C00000100000001 /* IntruderLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000272C00000100000001 /* IntruderLogView.swift */; };
+		AA1000282C00000100000001 /* PermissionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000282C00000100000001 /* PermissionStatusView.swift */; };
+		AA1000292C00000100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000292C00000100000001 /* SettingsView.swift */; };
+		AA1000302C00000100000001 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000302C00000100000001 /* MainTabView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BB1000002C00000100000001 /* AppLock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppLock.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB1000012C00000100000001 /* AppLockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockApp.swift; sourceTree = "<group>"; };
+		BB1000022C00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BB1000032C00000100000001 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		BB1000042C00000100000001 /* LockType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockType.swift; sourceTree = "<group>"; };
+		BB1000052C00000100000001 /* AppItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppItem.swift; sourceTree = "<group>"; };
+		BB1000062C00000100000001 /* IntruderRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntruderRecord.swift; sourceTree = "<group>"; };
+		BB1000072C00000100000001 /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
+		BB1000082C00000100000001 /* SecretNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretNote.swift; sourceTree = "<group>"; };
+		BB1000092C00000100000001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		BB1000102C00000100000001 /* BiometricManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricManager.swift; sourceTree = "<group>"; };
+		BB1000112C00000100000001 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		BB1000122C00000100000001 /* VaultManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultManager.swift; sourceTree = "<group>"; };
+		BB1000132C00000100000001 /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeManager.swift; sourceTree = "<group>"; };
+		BB1000142C00000100000001 /* AppLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockManager.swift; sourceTree = "<group>"; };
+		BB1000152C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
+		BB1000162C00000100000001 /* CyberHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberHeader.swift; sourceTree = "<group>"; };
+		BB1000172C00000100000001 /* PinPadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinPadView.swift; sourceTree = "<group>"; };
+		BB1000182C00000100000001 /* PatternLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternLockView.swift; sourceTree = "<group>"; };
+		BB1000192C00000100000001 /* LockScreenOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenOverlayView.swift; sourceTree = "<group>"; };
+		BB1000202C00000100000001 /* SecuritySetupFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySetupFlowView.swift; sourceTree = "<group>"; };
+		BB1000212C00000100000001 /* AppRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRowView.swift; sourceTree = "<group>"; };
+		BB1000222C00000100000001 /* ShortcutsGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsGuideView.swift; sourceTree = "<group>"; };
+		BB1000232C00000100000001 /* AppLockListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockListView.swift; sourceTree = "<group>"; };
+		BB1000242C00000100000001 /* NoteEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorSheet.swift; sourceTree = "<group>"; };
+		BB1000252C00000100000001 /* MediaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaDetailView.swift; sourceTree = "<group>"; };
+		BB1000262C00000100000001 /* VaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultView.swift; sourceTree = "<group>"; };
+		BB1000272C00000100000001 /* IntruderLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntruderLogView.swift; sourceTree = "<group>"; };
+		BB1000282C00000100000001 /* PermissionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStatusView.swift; sourceTree = "<group>"; };
+		BB1000292C00000100000001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BB1000302C00000100000001 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		BB1000312C00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CC1000002C00000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DD1000002C00000100000001 = {
+			isa = PBXGroup;
+			children = (
+				DD1000012C00000100000001 /* AppLock */,
+				DD1000022C00000100000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DD1000012C00000100000001 /* AppLock */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000012C00000100000001 /* AppLockApp.swift */,
+				BB1000312C00000100000001 /* Info.plist */,
+				BB1000022C00000100000001 /* Assets.xcassets */,
+				DD1000032C00000100000001 /* Theme */,
+				DD1000042C00000100000001 /* Models */,
+				DD1000052C00000100000001 /* Services */,
+				DD1000062C00000100000001 /* Views */,
+			);
+			path = AppLock;
+			sourceTree = "<group>";
+		};
+		DD1000022C00000100000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000002C00000100000001 /* AppLock.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DD1000032C00000100000001 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000032C00000100000001 /* AppColors.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		DD1000042C00000100000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000042C00000100000001 /* LockType.swift */,
+				BB1000052C00000100000001 /* AppItem.swift */,
+				BB1000062C00000100000001 /* IntruderRecord.swift */,
+				BB1000072C00000100000001 /* VaultItem.swift */,
+				BB1000082C00000100000001 /* SecretNote.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		DD1000052C00000100000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000092C00000100000001 /* HapticManager.swift */,
+				BB1000102C00000100000001 /* BiometricManager.swift */,
+				BB1000112C00000100000001 /* CameraManager.swift */,
+				BB1000122C00000100000001 /* VaultManager.swift */,
+				BB1000132C00000100000001 /* ScreenTimeManager.swift */,
+				BB1000142C00000100000001 /* AppLockManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		DD1000062C00000100000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000302C00000100000001 /* MainTabView.swift */,
+				DD1000072C00000100000001 /* Components */,
+				DD1000082C00000100000001 /* Security */,
+				DD1000092C00000100000001 /* AppLock */,
+				DD1000102C00000100000001 /* Vault */,
+				DD1000112C00000100000001 /* Intruder */,
+				DD1000122C00000100000001 /* Settings */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		DD1000072C00000100000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000152C00000100000001 /* GlassCard.swift */,
+				BB1000162C00000100000001 /* CyberHeader.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		DD1000082C00000100000001 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000172C00000100000001 /* PinPadView.swift */,
+				BB1000182C00000100000001 /* PatternLockView.swift */,
+				BB1000192C00000100000001 /* LockScreenOverlayView.swift */,
+				BB1000202C00000100000001 /* SecuritySetupFlowView.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		DD1000092C00000100000001 /* AppLock */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000212C00000100000001 /* AppRowView.swift */,
+				BB1000222C00000100000001 /* ShortcutsGuideView.swift */,
+				BB1000232C00000100000001 /* AppLockListView.swift */,
+			);
+			path = AppLock;
+			sourceTree = "<group>";
+		};
+		DD1000102C00000100000001 /* Vault */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000242C00000100000001 /* NoteEditorSheet.swift */,
+				BB1000252C00000100000001 /* MediaDetailView.swift */,
+				BB1000262C00000100000001 /* VaultView.swift */,
+			);
+			path = Vault;
+			sourceTree = "<group>";
+		};
+		DD1000112C00000100000001 /* Intruder */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000272C00000100000001 /* IntruderLogView.swift */,
+			);
+			path = Intruder;
+			sourceTree = "<group>";
+		};
+		DD1000122C00000100000001 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				BB1000282C00000100000001 /* PermissionStatusView.swift */,
+				BB1000292C00000100000001 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EE1000002C00000100000001 /* AppLock */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF1000012C00000100000001 /* Build configuration list for PBXNativeTarget "AppLock" */;
+			buildPhases = (
+				GG1000002C00000100000001 /* Sources */,
+				CC1000002C00000100000001 /* Frameworks */,
+				HH1000002C00000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AppLock;
+			productName = AppLock;
+			productReference = BB1000002C00000100000001 /* AppLock.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		001000002C00000100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					EE1000002C00000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = FF1000002C00000100000001 /* Build configuration list for PBXProject "AppLock" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DD1000002C00000100000001;
+			productRefGroup = DD1000022C00000100000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EE1000002C00000100000001 /* AppLock */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		HH1000002C00000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1000022C00000100000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		GG1000002C00000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1000012C00000100000001 /* AppLockApp.swift in Sources */,
+				AA1000032C00000100000001 /* AppColors.swift in Sources */,
+				AA1000042C00000100000001 /* LockType.swift in Sources */,
+				AA1000052C00000100000001 /* AppItem.swift in Sources */,
+				AA1000062C00000100000001 /* IntruderRecord.swift in Sources */,
+				AA1000072C00000100000001 /* VaultItem.swift in Sources */,
+				AA1000082C00000100000001 /* SecretNote.swift in Sources */,
+				AA1000092C00000100000001 /* HapticManager.swift in Sources */,
+				AA1000102C00000100000001 /* BiometricManager.swift in Sources */,
+				AA1000112C00000100000001 /* CameraManager.swift in Sources */,
+				AA1000122C00000100000001 /* VaultManager.swift in Sources */,
+				AA1000132C00000100000001 /* ScreenTimeManager.swift in Sources */,
+				AA1000142C00000100000001 /* AppLockManager.swift in Sources */,
+				AA1000152C00000100000001 /* GlassCard.swift in Sources */,
+				AA1000162C00000100000001 /* CyberHeader.swift in Sources */,
+				AA1000172C00000100000001 /* PinPadView.swift in Sources */,
+				AA1000182C00000100000001 /* PatternLockView.swift in Sources */,
+				AA1000192C00000100000001 /* LockScreenOverlayView.swift in Sources */,
+				AA1000202C00000100000001 /* SecuritySetupFlowView.swift in Sources */,
+				AA1000212C00000100000001 /* AppRowView.swift in Sources */,
+				AA1000222C00000100000001 /* ShortcutsGuideView.swift in Sources */,
+				AA1000232C00000100000001 /* AppLockListView.swift in Sources */,
+				AA1000242C00000100000001 /* NoteEditorSheet.swift in Sources */,
+				AA1000252C00000100000001 /* MediaDetailView.swift in Sources */,
+				AA1000262C00000100000001 /* VaultView.swift in Sources */,
+				AA1000272C00000100000001 /* IntruderLogView.swift in Sources */,
+				AA1000282C00000100000001 /* PermissionStatusView.swift in Sources */,
+				AA1000292C00000100000001 /* SettingsView.swift in Sources */,
+				AA1000302C00000100000001 /* MainTabView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		JJ1000002C00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		JJ1000012C00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		JJ1000022C00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AppLock/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AppLock;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.guardio.applock;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		JJ1000032C00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AppLock/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AppLock;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.guardio.applock;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF1000002C00000100000001 /* Build configuration list for PBXProject "AppLock" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				JJ1000002C00000100000001 /* Debug */,
+				JJ1000012C00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FF1000012C00000100000001 /* Build configuration list for PBXNativeTarget "AppLock" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				JJ1000022C00000100000001 /* Debug */,
+				JJ1000032C00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 001000002C00000100000001 /* Project object */;
+}
