@@ -27,6 +27,7 @@ public final class AppLockManager: ObservableObject {
         static let isAutomationVerified = "applock_automation_verified"
         static let unlockGraceSeconds = "applock_unlock_grace_seconds"
         static let unlockedGraceUntil = "applock_unlocked_grace_until"
+        static let unlockedAppsGrace = "applock_unlocked_apps_grace"
         static let pendingExternalTarget = "applock_pending_external_target"
     }
     
@@ -64,13 +65,9 @@ public final class AppLockManager: ObservableObject {
     @Published public var showPermissionGuideOnLaunch: Bool = false
     
     private var didEnterBackground: Bool = false
+    private var lastExternalUnlockDate: Date? = nil
+    private var lastAutoRedirectDate: Date? = nil
     private var toastWorkItem: DispatchWorkItem? = nil
-    private var graceExpiryWorkItem: DispatchWorkItem? = nil
-    
-    private var unlockedPassFileURL: URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return docs.appendingPathComponent("unlocked_pass.txt")
-    }
     
     private init() {
         let defaults = UserDefaults.standard
@@ -151,16 +148,20 @@ public final class AppLockManager: ObservableObject {
             ]
         }
         
-        // Restore pending target if launched from background Shortcut intent
-        if let pending = defaults.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
-            self.currentLockedAppTarget = pending
-            self.isExternalIntercept = true
+        // Restore pending target if launched from background Shortcut intent (unless in grace period)
+        if let grace = self.unlockedGraceUntil, Date() < grace {
+            defaults.removeObject(forKey: Keys.pendingExternalTarget)
+            self.isShowingLockOverlay = false
+            self.isAppUnlocked = true
+        } else {
+            if let pending = defaults.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
+                self.currentLockedAppTarget = pending
+                self.isExternalIntercept = true
+            }
+            // Always require authentication or setup at launch
+            self.isShowingLockOverlay = true
+            self.isAppUnlocked = false
         }
-        
-        // Always require authentication or setup at launch
-        self.isShowingLockOverlay = true
-        self.isAppUnlocked = false
-        syncUnlockedPassFile()
     }
     
     // Save state helper
@@ -202,40 +203,57 @@ public final class AppLockManager: ObservableObject {
     
     // Check if currently inside temporary unlocked grace period
     public var isWithinGracePeriod: Bool {
-        guard let until = unlockedGraceUntil else { return false }
-        return Date() < until
+        if let until = unlockedGraceUntil, Date() < until {
+            return true
+        }
+        if let timestamp = UserDefaults.standard.object(forKey: Keys.unlockedGraceUntil) as? Double {
+            let date = Date(timeIntervalSince1970: timestamp)
+            if Date() < date {
+                return true
+            }
+        }
+        return false
+    }
+    
+    public func isAppWithinGrace(_ appName: String) -> Bool {
+        let key = appName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if let dict = UserDefaults.standard.dictionary(forKey: Keys.unlockedAppsGrace) as? [String: Double] {
+            if let expiry = dict[key], Date().timeIntervalSince1970 < expiry {
+                return true
+            }
+            for (savedKey, expiry) in dict where Date().timeIntervalSince1970 < expiry {
+                if savedKey.contains(key) || key.contains(savedKey) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    
+    private func markAppGraceUnlocked(_ appName: String, until graceDate: Date) {
+        let key = appName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        var dict = UserDefaults.standard.dictionary(forKey: Keys.unlockedAppsGrace) as? [String: Double] ?? [:]
+        let now = Date().timeIntervalSince1970
+        dict = dict.filter { $0.value > now }
+        if !key.isEmpty {
+            dict[key] = graceDate.timeIntervalSince1970
+        }
+        UserDefaults.standard.set(dict, forKey: Keys.unlockedAppsGrace)
     }
     
     // Re-lock all external apps immediately
     public func relockExternalAppsNow() {
-        graceExpiryWorkItem?.cancel()
         unlockedGraceUntil = nil
+        lastExternalUnlockDate = nil
         UserDefaults.standard.removeObject(forKey: Keys.unlockedGraceUntil)
-        syncUnlockedPassFile()
+        UserDefaults.standard.removeObject(forKey: Keys.unlockedAppsGrace)
+        UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
+        UserDefaults.standard.synchronize()
         ScreenTimeManager.shared.resumeShields()
         if isVibrationEnabled {
             HapticManager.shared.notification(.success)
         }
         showToast("Đã kích hoạt khóa lại toàn bộ ứng dụng!")
-    }
-    
-    private func syncUnlockedPassFile() {
-        graceExpiryWorkItem?.cancel()
-        if let until = unlockedGraceUntil, until > Date() {
-            try? "UNLOCKED".write(to: unlockedPassFileURL, atomically: true, encoding: .utf8)
-            let remaining = until.timeIntervalSinceNow
-            let item = DispatchWorkItem { [weak self] in
-                guard let self = self else { return }
-                try? FileManager.default.removeItem(at: self.unlockedPassFileURL)
-                Task { @MainActor in
-                    self.unlockedGraceUntil = nil
-                }
-            }
-            graceExpiryWorkItem = item
-            DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: item)
-        } else {
-            try? FileManager.default.removeItem(at: unlockedPassFileURL)
-        }
     }
     
     public func showToast(_ message: String) {
@@ -282,9 +300,13 @@ public final class AppLockManager: ObservableObject {
         if wasExternal {
             let graceDate = Date().addingTimeInterval(TimeInterval(unlockGraceSeconds))
             self.unlockedGraceUntil = graceDate
+            self.lastExternalUnlockDate = Date()
             UserDefaults.standard.set(graceDate.timeIntervalSince1970, forKey: Keys.unlockedGraceUntil)
-            syncUnlockedPassFile()
+            if let targetName = interceptedTarget {
+                markAppGraceUnlocked(targetName, until: graceDate)
+            }
         }
+        UserDefaults.standard.synchronize()
         
         withAnimation(.spring()) {
             self.isShowingLockOverlay = false
@@ -357,8 +379,8 @@ public final class AppLockManager: ObservableObject {
     // MARK: - Shortcut AppIntent & URL Interception
     
     /// Được gọi ngầm từ CheckAppLockIntent khi người dùng bấm mở Facebook / Zalo / v.v.
-    /// Trả về `true` nếu CẦN KHÓA (chuyển ngay sang AppLock), `false` nếu cho phép mở bình thường.
-    public func evaluateShortcutIntercept(appName: String) -> Bool {
+    /// Trả về tên app (khác nil) nếu CẦN KHÓA, hoặc `nil` nếu cho phép mở bình thường (không kích hoạt lệnh `Nếu` trong Phím Tắt).
+    public func evaluateShortcutIntercept(appName: String) -> String? {
         let cleaned = appName.trimmingCharacters(in: .whitespacesAndNewlines)
         let targetTitle = cleaned.isEmpty ? "Ứng dụng bảo vệ" : cleaned
         
@@ -375,18 +397,16 @@ public final class AppLockManager: ObservableObject {
                cleaned.localizedCaseInsensitiveContains($0.appName)
            }) {
             if !matchedApp.isLocked {
-                // Người dùng đã tắt khóa cho app này trong danh sách -> cho vào thẳng!
-                return false
+                // Người dùng đã tắt khóa cho app này -> trả về nil để không mở AppLock
+                UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
+                return nil
             }
         }
         
-        // 2. Kiểm tra xem người dùng vừa mới mở khóa xác thực trong thời gian cho phép không (chống lặp vô hạn!)
-        if let timestamp = UserDefaults.standard.object(forKey: Keys.unlockedGraceUntil) as? Double {
-            let graceUntil = Date(timeIntervalSince1970: timestamp)
-            if Date() < graceUntil {
-                self.unlockedGraceUntil = graceUntil
-                return false
-            }
+        // 2. Kiểm tra xem ứng dụng này vừa mở khóa xác thực trong thời gian cho phép không (chống lặp vô hạn!)
+        if isAppWithinGrace(targetTitle) || isWithinGracePeriod {
+            UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
+            return nil
         }
         
         // 3. Cần khóa! Chuẩn bị sẵn màn hình khóa cho ứng dụng mục tiêu
@@ -395,22 +415,8 @@ public final class AppLockManager: ObservableObject {
         self.isAppUnlocked = false
         self.isShowingLockOverlay = true
         UserDefaults.standard.set(targetTitle, forKey: Keys.pendingExternalTarget)
-        return true
-    }
-    
-    public func forceInterceptLock(appName: String) -> Bool {
-        let cleaned = appName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let targetTitle = cleaned.isEmpty ? "Ứng dụng bảo vệ" : cleaned
-        if !isAutomationVerified {
-            isAutomationVerified = true
-            UserDefaults.standard.set(true, forKey: Keys.isAutomationVerified)
-        }
-        self.currentLockedAppTarget = targetTitle
-        self.isExternalIntercept = true
-        self.isAppUnlocked = false
-        self.isShowingLockOverlay = true
-        UserDefaults.standard.set(targetTitle, forKey: Keys.pendingExternalTarget)
-        return true
+        UserDefaults.standard.synchronize()
+        return targetTitle
     }
     
     // App locking actions
@@ -473,10 +479,19 @@ public final class AppLockManager: ObservableObject {
         }
     }
     
-    // Scene phase handling (chỉ khóa lại khi thực sự thoát ra nền, tránh lỗi lặp khóa khi hiện bảng Face ID!)
+    // Scene phase handling (chỉ khóa lại khi thực sự thoát ra nền, tránh lỗi lặp khóa khi hiện bảng Face ID hoặc vừa mở khóa Facebook!)
     public func appMovedToBackground() {
         didEnterBackground = true
         lastBackgroundDate = Date()
+        
+        // Nếu vừa mới mở khóa để chuyển sang app ngoài (< 4 giây) hoặc đang trong phiên mở khóa, không pre-arm khóa lại ngay lập tức
+        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 4.0 {
+            return
+        }
+        if isWithinGracePeriod {
+            return
+        }
+        
         if relockPolicy == .immediately {
             isAppUnlocked = false
             isShowingLockOverlay = true
@@ -484,8 +499,17 @@ public final class AppLockManager: ObservableObject {
     }
     
     public func appBecameActive() {
-        // Kiểm tra nếu vừa được gọi từ Shortcut Intent ngầm
+        // 1. Nếu vừa được kích hoạt bởi CheckAppLockIntent (cần khóa app ngoài)
         if let pending = UserDefaults.standard.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
+            if isAppWithinGrace(pending) || isWithinGracePeriod {
+                UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
+                self.isExternalIntercept = false
+                self.currentLockedAppTarget = nil
+                self.isShowingLockOverlay = false
+                self.isAppUnlocked = true
+                didEnterBackground = false
+                return
+            }
             self.currentLockedAppTarget = pending
             self.isExternalIntercept = true
             self.isAppUnlocked = false
@@ -496,6 +520,23 @@ public final class AppLockManager: ObservableObject {
         
         if isFirstLaunch {
             isShowingLockOverlay = true
+            return
+        }
+        
+        // 2. Nếu Phím Tắt vô tình tự bật lại AppLock ngay sau khi vừa mở khóa (< 4 giây), giữ nguyên mở khóa & báo người dùng
+        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 4.0 {
+            didEnterBackground = false
+            self.isAppUnlocked = true
+            self.isShowingLockOverlay = false
+            showToast("Phím tắt vừa tự mở lại AppLock! Hãy đặt 'Mở AppLock' NẰM TRONG khối 'Nếu' (If).")
+            return
+        }
+        
+        // Nếu đang trong phiên mở khóa tạm thời, không khóa đè
+        if isWithinGracePeriod {
+            didEnterBackground = false
+            self.isAppUnlocked = true
+            self.isShowingLockOverlay = false
             return
         }
         
@@ -531,6 +572,22 @@ public final class AppLockManager: ObservableObject {
             } else if let host = components.host, !host.isEmpty && host.lowercased() != "lock" {
                 targetAppName = host
             }
+        }
+        
+        // Nếu đang trong thời gian mở khóa tạm thời -> KHÔNG khóa lại và tránh ping-pong vô hạn!
+        if isAppWithinGrace(targetAppName) || isWithinGracePeriod {
+            self.isShowingLockOverlay = false
+            self.isAppUnlocked = true
+            self.currentLockedAppTarget = nil
+            
+            let canAutoRedirect = lastAutoRedirectDate == nil || Date().timeIntervalSince(lastAutoRedirectDate!) > 8.0
+            if canAutoRedirect {
+                lastAutoRedirectDate = Date()
+                openExternalAppIfPossible(named: targetAppName)
+            } else {
+                showToast("Phím Tắt đang tự lặp! Hãy dùng 'Kiểm tra cần khóa ứng dụng' + 'Nếu' thay cho Mở URL.")
+            }
+            return
         }
         
         self.currentLockedAppTarget = targetAppName

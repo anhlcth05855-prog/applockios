@@ -5,19 +5,13 @@ public struct ShortcutsGuideView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedAppName: String
-    @State private var useFallbackUrlMode: Bool = false
-    @State private var copiedUrl: Bool = false
+    @State private var copiedName: Bool = false
     
-    private let quickApps = ["Facebook", "YouTube", "Zalo", "Messenger", "Instagram", "Ảnh"]
+    private let quickApps = ["Facebook", "Messenger", "Zalo", "Instagram", "TikTok", "Ảnh (Photos)"]
     
     public init(initialAppName: String = "Facebook") {
         let cleaned = initialAppName.trimmingCharacters(in: .whitespacesAndNewlines)
         _selectedAppName = State(initialValue: cleaned.isEmpty ? "Facebook" : cleaned)
-    }
-    
-    private var deepLinkString: String {
-        let encoded = selectedAppName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? selectedAppName
-        return "applock://lock?app=\(encoded)"
     }
     
     public var body: some View {
@@ -28,12 +22,12 @@ public struct ShortcutsGuideView: View {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Bật Chặn Thực Tế Cho \(selectedAppName)")
-                            .font(.system(size: 19, weight: .bold))
+                        Text("Kích hoạt Khóa Thực Tế iOS")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
-                        Text("Bắt buộc trên iPhone (thay cho quyền Tiếp cận của Android)")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppColors.amber)
+                        Text("Chặn tức thì • Mở khóa tự vào thẳng \(selectedAppName)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(AppColors.cyan)
                     }
                     
                     Spacer()
@@ -50,61 +44,126 @@ public struct ShortcutsGuideView: View {
                 
                 ScrollView {
                     VStack(spacing: 14) {
-                        // App chips
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(quickApps, id: \.self) { app in
-                                    let active = selectedAppName == app
-                                    Button(action: {
-                                        selectedAppName = app
-                                        HapticManager.shared.selection()
-                                    }) {
-                                        HStack(spacing: 6) {
-                                            AppBrandIconView(appName: app, size: 18)
+                        // Quick select target app
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("CHỌN ỨNG DỤNG BẠN MUỐN KHÓA:")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(AppColors.textSecondary)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(quickApps, id: \.self) { app in
+                                        let active = selectedAppName == app
+                                        Button(action: {
+                                            selectedAppName = app
+                                            HapticManager.shared.selection()
+                                        }) {
                                             Text(app)
                                                 .font(.system(size: 13, weight: .bold))
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 7)
+                                                .background(active ? AppColors.cyan : AppColors.cardBackground)
+                                                .foregroundColor(active ? .black : AppColors.textPrimary)
+                                                .cornerRadius(8)
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 7)
-                                        .background(active ? AppColors.cyan : AppColors.cardBackground)
-                                        .foregroundColor(active ? AppColors.background : AppColors.textPrimary)
-                                        .cornerRadius(20)
                                     }
                                 }
                             }
                         }
                         
-                        // Mode Switcher (Standard vs Cato/Sideload URL Fallback)
-                        HStack(spacing: 0) {
-                            Button(action: { useFallbackUrlMode = false }) {
-                                Text("Cách 1: Tác vụ AppLock")
-                                    .font(.system(size: 12.5, weight: !useFallbackUrlMode ? .bold : .medium))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 36)
-                                    .background(Capsule().fill(!useFallbackUrlMode ? AppColors.cyan : Color.clear))
-                                    .foregroundColor(!useFallbackUrlMode ? AppColors.background : AppColors.textSecondary)
+                        // Visual Formula Preview Card
+                        GlassCard(
+                            cornerRadius: 14,
+                            borderColor: AppColors.cyan.opacity(0.45),
+                            backgroundColor: AppColors.backgroundSecondary
+                        ) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "cpu.fill")
+                                        .foregroundColor(AppColors.cyan)
+                                    Text("CÔNG THỨC CHỐNG LẶP VÔ HẠN (CHỈ 3 DÒNG):")
+                                        .font(.system(size: 12, weight: .heavy))
+                                        .foregroundColor(AppColors.cyan)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    codeLine(num: "1", text: "Kiểm tra cần khóa \"\(selectedAppName)\"", highlight: AppColors.cyan)
+                                    codeLine(num: "2", text: "Nếu [Kết quả] có bất kỳ giá trị nào", highlight: AppColors.amber)
+                                    codeLine(num: "3", text: "    ↳ Mở ứng dụng [AppLock]", highlight: AppColors.emerald)
+                                    codeLine(num: "4", text: "Kết thúc Nếu", highlight: AppColors.textSecondary)
+                                }
+                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(AppColors.background)
+                                .cornerRadius(10)
+                                
+                                Text("• Khi chưa mở khóa: bước 1 trả về \"\(selectedAppName)\" -> 'Nếu' Đúng -> mở AppLock.\n• Khi vừa nhập đúng PIN / Face ID: bước 1 trả về trống -> 'Nếu' Sai -> KHÔNG tự mở lại AppLock (hết lặp 100%).\n• Lưu ý: kéo 'Mở ứng dụng AppLock' đặt BÊN TRONG giữa 'Nếu' và 'Kết thúc Nếu'!")
+                                    .font(.system(size: 11.5))
+                                    .foregroundColor(AppColors.textSecondary)
                             }
-                            Button(action: { useFallbackUrlMode = true }) {
-                                Text("Cách 2: Dành cho Cato / Sideload")
-                                    .font(.system(size: 12.5, weight: useFallbackUrlMode ? .bold : .medium))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 36)
-                                    .background(Capsule().fill(useFallbackUrlMode ? AppColors.cyan : Color.clear))
-                                    .foregroundColor(useFallbackUrlMode ? AppColors.background : AppColors.textSecondary)
-                            }
+                            .padding(14)
                         }
-                        .padding(4)
-                        .background(Capsule().fill(AppColors.cardBackground).overlay(Capsule().stroke(AppColors.cardBorder, lineWidth: 1)))
                         
-                        if !useFallbackUrlMode {
-                            standardAppIntentGuide
-                        } else {
-                            catoUrlFallbackGuide
+                        // 4 Clear Steps
+                        stepCard(
+                            step: 1,
+                            title: "Mở tab Tự động hóa (Automation)",
+                            desc: "Bấm nút 'Mở ứng dụng Phím Tắt' bên dưới -> Chọn tab 'Tự động hóa' ở thanh dưới cùng -> Bấm dấu (+) góc trên bên phải.",
+                            icon: "plus.circle.fill",
+                            color: AppColors.cyan
+                        )
+                        
+                        stepCard(
+                            step: 2,
+                            title: "Chọn điều kiện mở \(selectedAppName)",
+                            desc: "Tìm chọn mục 'Ứng dụng' -> Bấm 'Chọn' và tích '\(selectedAppName)' -> Đảm bảo chọn 'Được mở' và TÍCH CHỌN 'Chạy ngay lập tức' (Run Immediately) -> Bấm 'Tiếp' -> Chọn 'Tác vụ trống mới' (New Blank Automation).",
+                            icon: "bolt.fill",
+                            color: AppColors.amber
+                        )
+                        
+                        stepCard(
+                            step: 3,
+                            title: "Thêm 'Kiểm tra cần khóa ứng dụng'",
+                            desc: "Bấm 'Thêm tác vụ' -> Gõ tìm 'AppLock' -> Chọn hành động 'Kiểm tra cần khóa ứng dụng' -> Chạm vào chữ Facebook màu xanh và điền '\(selectedAppName)'.",
+                            icon: "shield.checkered",
+                            color: AppColors.purple
+                        )
+                        
+                        stepCard(
+                            step: 4,
+                            title: "Thêm lệnh 'Nếu' -> 'Mở AppLock' (Chống lặp)",
+                            desc: "Gõ tìm lệnh 'Nếu' (If) -> giữ nguyên điều kiện mặc định 'có bất kỳ giá trị nào'. Sau đó tìm 'Mở ứng dụng' chọn 'AppLock' và kéo đặt NẰM GIỮA dòng 'Nếu' và 'Kết thúc Nếu' (tuyệt đối không để bên dưới 'Kết thúc Nếu') -> bấm 'Xong'!",
+                            icon: "checkmark.seal.fill",
+                            color: AppColors.emerald
+                        )
+                        
+                        // Copy App Name helper
+                        Button(action: {
+                            UIPasteboard.general.string = selectedAppName
+                            copiedName = true
+                            HapticManager.shared.notification(.success)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                copiedName = false
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: copiedName ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                                Text(copiedName ? "Đã sao chép tên '\(selectedAppName)'" : "Sao chép nhanh tên '\(selectedAppName)'")
+                            }
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(AppColors.cyan)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(AppColors.cardBackground)
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(AppColors.cyan.opacity(0.35), lineWidth: 1)
+                            )
                         }
                         
                         // Open Shortcuts App Button
                         Button(action: {
-                            UIPasteboard.general.string = deepLinkString
                             if let url = URL(string: "shortcuts://") {
                                 UIApplication.shared.open(url)
                             }
@@ -113,31 +172,32 @@ public struct ShortcutsGuideView: View {
                                 Image(systemName: "arrow.up.right.square.fill")
                                 Text("Mở ứng dụng Phím Tắt (Shortcuts) ngay")
                             }
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(AppColors.background)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Capsule().fill(AppColors.cyan))
                         }
+                        .buttonStyle(CyberButtonStyle(primaryColor: AppColors.cyan))
                         .padding(.top, 4)
                         
                         // Confirm Done Button
                         Button(action: {
                             appLockManager.isAutomationVerified = true
                             appLockManager.saveSettings()
-                            appLockManager.showToast("Đã kích hoạt trạng thái chặn ứng dụng!")
+                            HapticManager.shared.notification(.success)
                             dismiss()
                         }) {
-                            Text("Tôi đã tạo xong Tự động hóa trong Phím Tắt")
-                                .font(.system(size: 13.5, weight: .bold))
-                                .foregroundColor(AppColors.emerald)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 46)
-                                .background(
-                                    Capsule()
-                                        .fill(AppColors.emerald.opacity(0.14))
-                                        .overlay(Capsule().stroke(AppColors.emerald.opacity(0.5), lineWidth: 1))
-                                )
+                            HStack {
+                                Image(systemName: "checkmark.shield.fill")
+                                Text("Tôi đã cài đặt xong — Bật trạng thái Bảo vệ")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(AppColors.emerald)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(AppColors.emerald.opacity(0.14))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(AppColors.emerald.opacity(0.5), lineWidth: 1)
+                            )
                         }
                         .padding(.bottom, 28)
                     }
@@ -147,112 +207,41 @@ public struct ShortcutsGuideView: View {
         }
     }
     
-    private var standardAppIntentGuide: some View {
-        VStack(spacing: 12) {
-            stepCard(
-                step: 1,
-                title: "Mở app Phím Tắt -> Tab Tự động hóa (+)",
-                desc: "Vào ứng dụng 'Phím tắt' có sẵn trên iPhone -> chọn tab 'Tự động hóa' ở thanh dưới cùng -> bấm dấu (+) góc trên phải.",
-                color: AppColors.cyan
-            )
-            stepCard(
-                step: 2,
-                title: "Chọn Ứng dụng: \(selectedAppName) -> Chạy ngay lập tức",
-                desc: "Chọn 'Ứng dụng' -> Bấm 'Chọn' và tích '\(selectedAppName)' -> Tích 'Được mở' và BẮT BUỘC chọn 'Chạy ngay lập tức' (Run Immediately) -> Bấm 'Tiếp' -> Chọn 'Tác vụ trống mới'.",
-                color: AppColors.amber
-            )
-            stepCard(
-                step: 3,
-                title: "Thêm: Kiểm tra cần khóa -> Nếu -> Mở AppLock",
-                desc: "1. Tìm 'AppLock' -> chọn 'Kiểm tra cần khóa ứng dụng' (điền '\(selectedAppName)').\n2. Tìm lệnh 'Nếu' (If).\n3. Tìm 'Mở ứng dụng' -> chọn 'AppLock' và kéo nằm giữa dòng 'Nếu' và 'Kết thúc Nếu' -> Bấm Xong!\n(Nếu tìm không thấy 'Kiểm tra cần khóa' do cài qua Cato, hãy bấm sang tab Cách 2 ở trên!)",
-                color: AppColors.emerald
-            )
+    private func codeLine(num: String, text: String, highlight: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(num)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(AppColors.textMuted)
+            Text(text)
+                .font(.system(size: 12.5, weight: .bold, design: .monospaced))
+                .foregroundColor(highlight)
         }
     }
     
-    private var catoUrlFallbackGuide: some View {
-        VStack(spacing: 12) {
-            GlassCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Link khóa dành riêng cho \(selectedAppName):")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(AppColors.cyan)
-                    
-                    HStack {
-                        Text(deepLinkString)
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-                        Spacer()
-                        Button(action: {
-                            UIPasteboard.general.string = deepLinkString
-                            copiedUrl = true
-                            HapticManager.shared.notification(.success)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copiedUrl = false }
-                        }) {
-                            Text(copiedUrl ? "Đã chép!" : "Sao chép")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(AppColors.background)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Capsule().fill(copiedUrl ? AppColors.emerald : AppColors.cyan))
-                        }
-                    }
-                    .padding(10)
-                    .background(AppColors.inputBackground)
-                    .cornerRadius(10)
+    private func stepCard(step: Int, title: String, desc: String, icon: String, color: Color) -> some View {
+        GlassCard {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(color)
                 }
-                .padding(14)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Bước \(step): \(title)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(desc)
+                        .font(.system(size: 12.5))
+                        .foregroundColor(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            
-            stepCard(
-                step: 1,
-                title: "Mở Phím Tắt -> Tự động hóa (+) -> Ứng dụng",
-                desc: "Chọn '\(selectedAppName)' -> tích 'Được mở' -> tích 'Chạy ngay lập tức' (Run Immediately) -> Tiếp -> 'Tác vụ trống mới'.",
-                color: AppColors.cyan
-            )
-            stepCard(
-                step: 2,
-                title: "Kiểm tra phiên mở khóa (Chống lặp vô hạn)",
-                desc: "1. Thêm tác vụ 'Lấy tệp từ thư mục' -> chọn thư mục 'Trên iPhone của tôi / AppLock', ô đường dẫn gõ: unlocked_pass.txt -> Bấm mũi tên mở rộng TẮT 'Báo lỗi nếu không tìm thấy'.\n2. Thêm lệnh 'Nếu' -> bấm vào điều kiện chọn 'không có giá trị bất kỳ'.",
-                color: AppColors.amber
-            )
-            stepCard(
-                step: 3,
-                title: "Thêm 'Mở URL' bên trong 'Nếu'",
-                desc: "Tìm tác vụ 'Mở URL' (Open URLs), dán link '\(deepLinkString)' vào, rồi kéo dòng 'Mở URL' nằm giữa 'Nếu' và 'Kết thúc Nếu' -> Bấm Xong! Từ giờ bấm vào \(selectedAppName) sẽ hiện ngay màn hình nhập mã PIN!",
-                color: AppColors.emerald
-            )
+            .padding(14)
         }
-    }
-    
-    private func stepCard(step: Int, title: String, desc: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.18))
-                    .frame(width: 30, height: 30)
-                Text("\(step)")
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundColor(color)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
-                Text(desc)
-                    .font(.system(size: 12.5))
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(AppColors.cardBackground)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(AppColors.cardBorder, lineWidth: 1))
-        )
     }
 }

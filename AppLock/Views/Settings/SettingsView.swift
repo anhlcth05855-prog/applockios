@@ -234,7 +234,7 @@ public struct SettingsView: View {
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
                         
-                        Text("Phiên bản 1.2.0 Pro Guard")
+                        Text("Phiên bản 1.3.0 Pro Guard")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(AppColors.cyan)
                         

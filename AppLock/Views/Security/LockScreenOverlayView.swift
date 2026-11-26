@@ -102,6 +102,10 @@ public struct LockScreenOverlayView: View {
             }
         }
         .onAppear {
+            enteredPin = ""
+            selectedPattern = []
+            patternState = .normal
+            errorToast = nil
             if appLockManager.isBiometricEnabled {
                 triggerBiometrics()
             }
@@ -195,6 +199,7 @@ public struct LockScreenOverlayView: View {
     private func verifyPinCode(_ pin: String) {
         if appLockManager.verifyPIN(pin) {
             errorToast = nil
+            enteredPin = ""
             appLockManager.handleSuccessfulUnlock()
             dismiss()
         } else {

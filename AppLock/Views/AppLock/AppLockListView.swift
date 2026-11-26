@@ -219,12 +219,7 @@ public struct AppLockListView: View {
                                     app: app,
                                     onToggle: {
                                         let locked = appLockManager.toggleAppLock(id: app.id)
-                                        if locked && !isSystemProtectionActive {
-                                            guideInitialApp = app.appName
-                                            showShortcutsGuide = true
-                                        } else {
-                                            appLockManager.showToast(locked ? "Đã khóa bảo vệ \(app.appName)" : "Đã mở khóa \(app.appName)")
-                                        }
+                                        appLockManager.showToast(locked ? "Đã khóa bảo vệ \(app.appName)" : "Đã mở khóa \(app.appName)")
                                     },
                                     onTestLock: {
                                         appLockManager.currentLockedAppTarget = app.appName
