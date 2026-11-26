@@ -182,6 +182,7 @@ public struct SettingsView: View {
                                     .foregroundColor(AppColors.textSecondary)
                                 Spacer()
                                 Picker("", selection: $appLockManager.unlockGraceSeconds) {
+                                    Text("15 giây").tag(15)
                                     Text("30 giây").tag(30)
                                     Text("1 phút").tag(60)
                                     Text("2 phút").tag(120)
@@ -234,7 +235,7 @@ public struct SettingsView: View {
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
                         
-                        Text("Phiên bản 1.3.0 Pro Guard")
+                        Text("Phiên bản 1.3.1 Pro Guard")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(AppColors.cyan)
                         
@@ -257,6 +258,11 @@ public struct SettingsView: View {
                 }
                 .padding(16)
             }
+        }
+        .onChange(of: appLockManager.modalDismissToken) { _ in
+            showingChangePasscode = false
+            showingShortcutsGuide = false
+            showingFamilyPicker = false
         }
         .onAppear {
             cameraAuthorized = (AVCaptureDevice.authorizationStatus(for: .video) == .authorized)

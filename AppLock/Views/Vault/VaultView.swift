@@ -93,6 +93,11 @@ public struct VaultView: View {
                 .padding(.trailing, 20)
                 .padding(.bottom, 20)
         }
+        .onChange(of: appLockManager.modalDismissToken) { _ in
+            viewingItem = nil
+            editingNote = nil
+            isCreatingNote = false
+        }
         .sheet(item: $viewingItem) { item in
             MediaDetailView(item: item) {
                 appLockManager.deleteVaultItem(item)

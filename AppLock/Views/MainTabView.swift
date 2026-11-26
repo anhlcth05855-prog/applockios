@@ -70,23 +70,32 @@ public struct MainTabView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(10)
             }
+            
+            // Guaranteed Root Lock / Setup Overlay (never blocked by open .sheet modals)
+            if appLockManager.isShowingLockOverlay {
+                Group {
+                    if appLockManager.isFirstLaunch {
+                        SecuritySetupFlowView {
+                            appLockManager.isShowingLockOverlay = false
+                            if !appLockManager.isAutomationVerified {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                    showPermissionGuideSheet = true
+                                }
+                            }
+                        }
+                    } else {
+                        LockScreenOverlayView()
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
+        .onChange(of: appLockManager.modalDismissToken) { _ in
+            showPermissionGuideSheet = false
         }
         .sheet(isPresented: $showPermissionGuideSheet) {
             PermissionStatusView()
-        }
-        .fullScreenCover(isPresented: $appLockManager.isShowingLockOverlay) {
-            if appLockManager.isFirstLaunch {
-                SecuritySetupFlowView {
-                    appLockManager.isShowingLockOverlay = false
-                    if !appLockManager.isAutomationVerified {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            showPermissionGuideSheet = true
-                        }
-                    }
-                }
-            } else {
-                LockScreenOverlayView()
-            }
         }
     }
     

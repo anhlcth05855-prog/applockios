@@ -241,6 +241,11 @@ public struct AppLockListView: View {
                 }
             }
         }
+        .onChange(of: appLockManager.modalDismissToken) { _ in
+            showShortcutsGuide = false
+            showAddAppSheet = false
+            showFamilyPicker = false
+        }
         .sheet(isPresented: $showShortcutsGuide) {
             ShortcutsGuideView(initialAppName: guideInitialApp)
         }

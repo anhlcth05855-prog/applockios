@@ -154,6 +154,10 @@ public struct IntruderLogView: View {
                 }
             }
         }
+        .onChange(of: appLockManager.modalDismissToken) { _ in
+            viewingRecord = nil
+            showingClearAlert = false
+        }
         .sheet(item: $viewingRecord) { record in
             intruderDetailSheet(record: record)
         }

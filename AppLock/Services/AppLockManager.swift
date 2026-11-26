@@ -63,6 +63,7 @@ public final class AppLockManager: ObservableObject {
     @Published public var lastBackgroundDate: Date? = nil
     @Published public var toastMessage: String? = nil
     @Published public var showPermissionGuideOnLaunch: Bool = false
+    @Published public var modalDismissToken: Int = 0
     
     private var didEnterBackground: Bool = false
     private var lastExternalUnlockDate: Date? = nil
@@ -91,7 +92,7 @@ public final class AppLockManager: ObservableObject {
         
         self.isAutomationVerified = defaults.bool(forKey: Keys.isAutomationVerified)
         let savedGrace = defaults.integer(forKey: Keys.unlockGraceSeconds)
-        self.unlockGraceSeconds = savedGrace > 0 ? savedGrace : 120 // Mặc định cho phép dùng 2 phút sau khi mở khóa
+        self.unlockGraceSeconds = (savedGrace > 0 && savedGrace != 120) ? savedGrace : 15
         if let graceTimestamp = defaults.object(forKey: Keys.unlockedGraceUntil) as? Double {
             let date = Date(timeIntervalSince1970: graceTimestamp)
             self.unlockedGraceUntil = date > Date() ? date : nil
@@ -148,16 +149,19 @@ public final class AppLockManager: ObservableObject {
             ]
         }
         
-        // Restore pending target if launched from background Shortcut intent (unless in grace period)
-        if let grace = self.unlockedGraceUntil, Date() < grace {
-            defaults.removeObject(forKey: Keys.pendingExternalTarget)
-            self.isShowingLockOverlay = false
-            self.isAppUnlocked = true
-        } else {
-            if let pending = defaults.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
+        // Restore pending target if launched from background Shortcut intent
+        if let pending = defaults.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
+            if isAppWithinGrace(pending) {
+                defaults.removeObject(forKey: Keys.pendingExternalTarget)
+                self.isShowingLockOverlay = false
+                self.isAppUnlocked = true
+            } else {
                 self.currentLockedAppTarget = pending
                 self.isExternalIntercept = true
+                self.isShowingLockOverlay = true
+                self.isAppUnlocked = false
             }
+        } else {
             // Always require authentication or setup at launch
             self.isShowingLockOverlay = true
             self.isAppUnlocked = false
@@ -403,8 +407,8 @@ public final class AppLockManager: ObservableObject {
             }
         }
         
-        // 2. Kiểm tra xem ứng dụng này vừa mở khóa xác thực trong thời gian cho phép không (chống lặp vô hạn!)
-        if isAppWithinGrace(targetTitle) || isWithinGracePeriod {
+        // 2. Kiểm tra xem ứng dụng này vừa mở khóa xác thực trong thời gian cho phép không (chỉ xét riêng từng app!)
+        if isAppWithinGrace(targetTitle) {
             UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
             return nil
         }
@@ -413,6 +417,7 @@ public final class AppLockManager: ObservableObject {
         self.currentLockedAppTarget = targetTitle
         self.isExternalIntercept = true
         self.isAppUnlocked = false
+        self.modalDismissToken += 1
         self.isShowingLockOverlay = true
         UserDefaults.standard.set(targetTitle, forKey: Keys.pendingExternalTarget)
         UserDefaults.standard.synchronize()
@@ -484,16 +489,14 @@ public final class AppLockManager: ObservableObject {
         didEnterBackground = true
         lastBackgroundDate = Date()
         
-        // Nếu vừa mới mở khóa để chuyển sang app ngoài (< 4 giây) hoặc đang trong phiên mở khóa, không pre-arm khóa lại ngay lập tức
-        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 4.0 {
-            return
-        }
-        if isWithinGracePeriod {
+        // Nếu vừa mới mở khóa để chuyển sang app ngoài (< 3 giây), không pre-arm khóa lại trong lúc đang chuyển app
+        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 3.0 {
             return
         }
         
         if relockPolicy == .immediately {
             isAppUnlocked = false
+            modalDismissToken += 1
             isShowingLockOverlay = true
         }
     }
@@ -501,7 +504,7 @@ public final class AppLockManager: ObservableObject {
     public func appBecameActive() {
         // 1. Nếu vừa được kích hoạt bởi CheckAppLockIntent (cần khóa app ngoài)
         if let pending = UserDefaults.standard.string(forKey: Keys.pendingExternalTarget), !pending.isEmpty {
-            if isAppWithinGrace(pending) || isWithinGracePeriod {
+            if isAppWithinGrace(pending) {
                 UserDefaults.standard.removeObject(forKey: Keys.pendingExternalTarget)
                 self.isExternalIntercept = false
                 self.currentLockedAppTarget = nil
@@ -513,30 +516,24 @@ public final class AppLockManager: ObservableObject {
             self.currentLockedAppTarget = pending
             self.isExternalIntercept = true
             self.isAppUnlocked = false
+            self.modalDismissToken += 1
             self.isShowingLockOverlay = true
             didEnterBackground = false
             return
         }
         
         if isFirstLaunch {
+            modalDismissToken += 1
             isShowingLockOverlay = true
             return
         }
         
-        // 2. Nếu Phím Tắt vô tình tự bật lại AppLock ngay sau khi vừa mở khóa (< 4 giây), giữ nguyên mở khóa & báo người dùng
-        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 4.0 {
+        // 2. Nếu Phím Tắt vô tình tự bật lại AppLock ngay sau khi vừa mở khóa (< 3 giây), giữ nguyên mở khóa & báo người dùng
+        if let lastUnlock = lastExternalUnlockDate, Date().timeIntervalSince(lastUnlock) < 3.0 {
             didEnterBackground = false
             self.isAppUnlocked = true
             self.isShowingLockOverlay = false
             showToast("Phím tắt vừa tự mở lại AppLock! Hãy đặt 'Mở AppLock' NẰM TRONG khối 'Nếu' (If).")
-            return
-        }
-        
-        // Nếu đang trong phiên mở khóa tạm thời, không khóa đè
-        if isWithinGracePeriod {
-            didEnterBackground = false
-            self.isAppUnlocked = true
-            self.isShowingLockOverlay = false
             return
         }
         
@@ -546,10 +543,12 @@ public final class AppLockManager: ObservableObject {
         switch relockPolicy {
         case .immediately, .screenOff:
             isAppUnlocked = false
+            modalDismissToken += 1
             isShowingLockOverlay = true
         case .oneMinute:
             if let lastBg = lastBackgroundDate, Date().timeIntervalSince(lastBg) > 60 {
                 isAppUnlocked = false
+                modalDismissToken += 1
                 isShowingLockOverlay = true
             }
         }
@@ -574,8 +573,8 @@ public final class AppLockManager: ObservableObject {
             }
         }
         
-        // Nếu đang trong thời gian mở khóa tạm thời -> KHÔNG khóa lại và tránh ping-pong vô hạn!
-        if isAppWithinGrace(targetAppName) || isWithinGracePeriod {
+        // Nếu đang trong thời gian mở khóa tạm thời của chính app này -> KHÔNG khóa lại và tránh ping-pong vô hạn!
+        if isAppWithinGrace(targetAppName) {
             self.isShowingLockOverlay = false
             self.isAppUnlocked = true
             self.currentLockedAppTarget = nil
