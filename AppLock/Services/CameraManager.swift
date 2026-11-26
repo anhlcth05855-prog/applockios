@@ -8,6 +8,7 @@ public final class CameraManager: NSObject, AVCapturePhotoCaptureDelegate {
     private var captureSession: AVCaptureSession?
     private var photoOutput: AVCapturePhotoOutput?
     private var completionHandler: ((Result<String, Error>) -> Void)?
+    private var isCapturing = false
     
     private override init() {
         super.init()
@@ -28,12 +29,18 @@ public final class CameraManager: NSObject, AVCapturePhotoCaptureDelegate {
     }
     
     public func captureIntruderPhoto(targetAppName: String, completion: @escaping (Result<String, Error>) -> Void) {
+        guard !isCapturing else {
+            completion(.failure(NSError(domain: "CameraManager", code: 429, userInfo: [NSLocalizedDescriptionKey: "Đang trong tiến trình chụp"])))
+            return
+        }
+        
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         guard status == .authorized else {
             completion(.failure(NSError(domain: "CameraManager", code: 401, userInfo: [NSLocalizedDescriptionKey: "Chưa cấp quyền Camera"])))
             return
         }
         
+        isCapturing = true
         self.completionHandler = completion
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -86,6 +93,7 @@ public final class CameraManager: NSObject, AVCapturePhotoCaptureDelegate {
         captureSession?.stopRunning()
         captureSession = nil
         photoOutput = nil
+        isCapturing = false
         
         if let error = error {
             DispatchQueue.main.async {
@@ -101,32 +109,42 @@ public final class CameraManager: NSObject, AVCapturePhotoCaptureDelegate {
             return
         }
         
-        // Save intruder image to sandbox
-        do {
-            let fileManager = FileManager.default
-            let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let intruderFolder = documents.appendingPathComponent("Intruders", isDirectory: true)
-            
-            if !fileManager.fileExists(atPath: intruderFolder.path) {
-                try fileManager.createDirectory(at: intruderFolder, withIntermediateDirectories: true)
-            }
-            
-            let fileName = "intruder_\(UUID().uuidString).jpg"
-            let fileURL = intruderFolder.appendingPathComponent(fileName)
-            
-            // Fix orientation
-            let normalizedImage = image.fixedOrientation()
-            if let jpegData = normalizedImage.jpegData(compressionQuality: 0.8) {
-                try jpegData.write(to: fileURL)
-                DispatchQueue.main.async {
-                    self.completionHandler?(.success(fileName))
+        // Save intruder image to sandbox in background
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                let fileManager = FileManager.default
+                let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let intruderFolder = documents.appendingPathComponent("Intruders", isDirectory: true)
+                
+                if !fileManager.fileExists(atPath: intruderFolder.path) {
+                    try fileManager.createDirectory(at: intruderFolder, withIntermediateDirectories: true)
                 }
-            } else {
-                throw NSError(domain: "CameraManager", code: 501, userInfo: [NSLocalizedDescriptionKey: "Không thể nén JPEG"])
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.completionHandler?(.failure(error))
+                
+                let fileName = "intruder_\(UUID().uuidString).jpg"
+                let fileURL = intruderFolder.appendingPathComponent(fileName)
+                
+                // Downscale to max 800x1066 to prevent memory spikes
+                let maxDimension: CGFloat = 800
+                let scale = min(maxDimension / image.size.width, maxDimension / image.size.height, 1.0)
+                let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                
+                let renderer = UIGraphicsImageRenderer(size: targetSize)
+                let optimizedImage = renderer.image { _ in
+                    image.draw(in: CGRect(origin: .zero, size: targetSize))
+                }
+                
+                if let jpegData = optimizedImage.jpegData(compressionQuality: 0.75) {
+                    try jpegData.write(to: fileURL)
+                    DispatchQueue.main.async {
+                        self.completionHandler?(.success(fileName))
+                    }
+                } else {
+                    throw NSError(domain: "CameraManager", code: 501, userInfo: [NSLocalizedDescriptionKey: "Không thể nén JPEG"])
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.completionHandler?(.failure(error))
+                }
             }
         }
     }

@@ -23,6 +23,7 @@
 		AA1000142C00000100000001 /* AppLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000142C00000100000001 /* AppLockManager.swift */; };
 		AA1000152C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000152C00000100000001 /* GlassCard.swift */; };
 		AA1000162C00000100000001 /* CyberHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000162C00000100000001 /* CyberHeader.swift */; };
+		AA1000322C00000100000001 /* AsyncThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000322C00000100000001 /* AsyncThumbnailView.swift */; };
 		AA1000172C00000100000001 /* PinPadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000172C00000100000001 /* PinPadView.swift */; };
 		AA1000182C00000100000001 /* PatternLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000182C00000100000001 /* PatternLockView.swift */; };
 		AA1000192C00000100000001 /* LockScreenOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000192C00000100000001 /* LockScreenOverlayView.swift */; };
@@ -57,6 +58,7 @@
 		BB1000142C00000100000001 /* AppLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockManager.swift; sourceTree = "<group>"; };
 		BB1000152C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		BB1000162C00000100000001 /* CyberHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberHeader.swift; sourceTree = "<group>"; };
+		BB1000322C00000100000001 /* AsyncThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncThumbnailView.swift; sourceTree = "<group>"; };
 		BB1000172C00000100000001 /* PinPadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinPadView.swift; sourceTree = "<group>"; };
 		BB1000182C00000100000001 /* PatternLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternLockView.swift; sourceTree = "<group>"; };
 		BB1000192C00000100000001 /* LockScreenOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenOverlayView.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 			children = (
 				BB1000152C00000100000001 /* GlassCard.swift */,
 				BB1000162C00000100000001 /* CyberHeader.swift */,
+				BB1000322C00000100000001 /* AsyncThumbnailView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -303,6 +306,7 @@
 				AA1000142C00000100000001 /* AppLockManager.swift in Sources */,
 				AA1000152C00000100000001 /* GlassCard.swift in Sources */,
 				AA1000162C00000100000001 /* CyberHeader.swift in Sources */,
+				AA1000322C00000100000001 /* AsyncThumbnailView.swift in Sources */,
 				AA1000172C00000100000001 /* PinPadView.swift in Sources */,
 				AA1000182C00000100000001 /* PatternLockView.swift in Sources */,
 				AA1000192C00000100000001 /* LockScreenOverlayView.swift in Sources */,
@@ -377,6 +381,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppLock/AppLock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -405,6 +410,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppLock/AppLock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";

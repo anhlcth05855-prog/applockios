@@ -17,6 +17,9 @@ struct AppLockApp: App {
                 .environmentObject(appLockManager)
                 .environmentObject(screenTimeManager)
                 .preferredColorScheme(.dark)
+                .onOpenURL { url in
+                    appLockManager.handleDeepLink(url: url)
+                }
                 .onChange(of: scenePhase) { newPhase in
                     switch newPhase {
                     case .background:

@@ -120,26 +120,12 @@ public struct IntruderLogView: View {
                                         GlassCard(cornerRadius: 14) {
                                             HStack(spacing: 14) {
                                                 // Intruder photo thumbnail
-                                                if let img = VaultManager.shared.loadIntruderPhoto(fileName: record.imageFileName) {
-                                                    Image(uiImage: img)
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 54, height: 54)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                                        .overlay(
-                                                            RoundedRectangle(cornerRadius: 10)
-                                                                .stroke(AppColors.coral.opacity(0.5), lineWidth: 1)
-                                                        )
-                                                } else {
-                                                    ZStack {
+                                                AsyncThumbnailView(fileName: record.imageFileName, type: .intruder, cornerRadius: 10, height: 54)
+                                                    .frame(width: 54, height: 54)
+                                                    .overlay(
                                                         RoundedRectangle(cornerRadius: 10)
-                                                            .fill(AppColors.cardBackground)
-                                                            .frame(width: 54, height: 54)
-                                                        Image(systemName: "person.crop.rectangle.badge.exclamationmark")
-                                                            .font(.system(size: 24))
-                                                            .foregroundColor(AppColors.coral)
-                                                    }
-                                                }
+                                                            .stroke(AppColors.coral.opacity(0.5), lineWidth: 1)
+                                                    )
                                                 
                                                 // Info
                                                 VStack(alignment: .leading, spacing: 4) {

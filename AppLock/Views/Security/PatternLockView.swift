@@ -20,7 +20,6 @@ public struct PatternLockView: View {
     var onComplete: ([Int]) -> Void
     
     @State private var currentDragPosition: CGPoint? = nil
-    @State private var dotPositions: [Int: CGPoint] = [:]
     
     public init(
         selectedIndices: Binding<[Int]>,
@@ -32,103 +31,97 @@ public struct PatternLockView: View {
         self.onComplete = onComplete
     }
     
+    private func dotCenter(for index: Int, spacing: CGFloat) -> CGPoint {
+        let col = CGFloat(index % 3)
+        let row = CGFloat(index / 3)
+        return CGPoint(x: (col + 0.5) * spacing, y: (row + 0.5) * spacing)
+    }
+    
     public var body: some View {
-        GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height)
-            let dotRadius: CGFloat = 16
-            let activeDotRadius: CGFloat = 22
-            let spacing = size / 3
-            
-            ZStack {
-                // Background line paths
-                Canvas { context, _ in
-                    guard selectedIndices.count > 0 else { return }
+        let size: CGFloat = 280
+        let dotRadius: CGFloat = 16
+        let activeDotRadius: CGFloat = 22
+        let spacing = size / 3
+        
+        ZStack {
+            // Background line paths
+            Canvas { context, _ in
+                guard selectedIndices.count > 0 else { return }
+                
+                var path = Path()
+                if let firstIndex = selectedIndices.first {
+                    path.move(to: dotCenter(for: firstIndex, spacing: spacing))
                     
-                    var path = Path()
-                    if let firstIndex = selectedIndices.first, let startPoint = dotPositions[firstIndex] {
-                        path.move(to: startPoint)
-                        
-                        for index in selectedIndices.dropFirst() {
-                            if let point = dotPositions[index] {
-                                path.addLine(to: point)
-                            }
-                        }
-                        
-                        if let dragPos = currentDragPosition, state == .normal {
-                            path.addLine(to: dragPos)
-                        }
+                    for index in selectedIndices.dropFirst() {
+                        path.addLine(to: dotCenter(for: index, spacing: spacing))
                     }
                     
-                    context.stroke(
-                        path,
-                        with: .color(state.color.opacity(0.8)),
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
-                    )
+                    if let dragPos = currentDragPosition, state == .normal {
+                        path.addLine(to: dragPos)
+                    }
                 }
                 
-                // 3x3 Grid Dots
-                VStack(spacing: spacing - dotRadius * 2) {
-                    ForEach(0..<3) { row in
-                        HStack(spacing: spacing - dotRadius * 2) {
-                            ForEach(0..<3) { col in
-                                let index = row * 3 + col
-                                let isSelected = selectedIndices.contains(index)
+                context.stroke(
+                    path,
+                    with: .color(state.color.opacity(0.8)),
+                    style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
+                )
+            }
+            
+            // 3x3 Grid Dots
+            VStack(spacing: spacing - dotRadius * 2) {
+                ForEach(0..<3) { row in
+                    HStack(spacing: spacing - dotRadius * 2) {
+                        ForEach(0..<3) { col in
+                            let index = row * 3 + col
+                            let isSelected = selectedIndices.contains(index)
+                            
+                            ZStack {
+                                // Outer ring
+                                Circle()
+                                    .stroke(
+                                        isSelected ? state.color : AppColors.cardBorder,
+                                        lineWidth: isSelected ? 2.5 : 1.5
+                                    )
+                                    .frame(width: isSelected ? activeDotRadius * 2 : dotRadius * 2,
+                                           height: isSelected ? activeDotRadius * 2 : dotRadius * 2)
+                                    .background(
+                                        Circle().fill(isSelected ? state.color.opacity(0.15) : AppColors.cardBackground)
+                                    )
+                                    .shadow(color: isSelected ? state.color.opacity(0.6) : Color.clear, radius: 8)
                                 
-                                ZStack {
-                                    // Outer ring
-                                    Circle()
-                                        .stroke(
-                                            isSelected ? state.color : AppColors.cardBorder,
-                                            lineWidth: isSelected ? 2.5 : 1.5
-                                        )
-                                        .frame(width: isSelected ? activeDotRadius * 2 : dotRadius * 2,
-                                               height: isSelected ? activeDotRadius * 2 : dotRadius * 2)
-                                        .background(
-                                            Circle().fill(isSelected ? state.color.opacity(0.15) : AppColors.cardBackground)
-                                        )
-                                        .shadow(color: isSelected ? state.color.opacity(0.6) : Color.clear, radius: 8)
-                                    
-                                    // Center inner dot
-                                    Circle()
-                                        .fill(isSelected ? state.color : AppColors.textSecondary.opacity(0.6))
-                                        .frame(width: isSelected ? 12 : 8, height: isSelected ? 12 : 8)
-                                }
-                                .background(
-                                    GeometryReader { dotGeo in
-                                        Color.clear
-                                            .onAppear {
-                                                let frame = dotGeo.frame(in: .named("PatternSpace"))
-                                                dotPositions[index] = CGPoint(x: frame.midX, y: frame.midY)
-                                            }
-                                    }
-                                )
+                                // Center inner dot
+                                Circle()
+                                    .fill(isSelected ? state.color : AppColors.textSecondary.opacity(0.6))
+                                    .frame(width: isSelected ? 12 : 8, height: isSelected ? 12 : 8)
                             }
                         }
                     }
                 }
             }
-            .coordinateSpace(name: "PatternSpace")
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named("PatternSpace"))
-                    .onChanged { value in
-                        currentDragPosition = value.location
-                        checkHitDot(at: value.location, radius: spacing * 0.4)
-                    }
-                    .onEnded { _ in
-                        currentDragPosition = nil
-                        if selectedIndices.count >= 3 {
-                            onComplete(selectedIndices)
-                        } else {
-                            selectedIndices.removeAll()
-                        }
-                    }
-            )
         }
-        .frame(width: 280, height: 280)
+        .frame(width: size, height: size)
+        .coordinateSpace(name: "PatternSpace")
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .named("PatternSpace"))
+                .onChanged { value in
+                    currentDragPosition = value.location
+                    checkHitDot(at: value.location, spacing: spacing, radius: spacing * 0.4)
+                }
+                .onEnded { _ in
+                    currentDragPosition = nil
+                    if selectedIndices.count >= 3 {
+                        onComplete(selectedIndices)
+                    } else {
+                        selectedIndices.removeAll()
+                    }
+                }
+        )
     }
     
-    private func checkHitDot(at location: CGPoint, radius: CGFloat) {
-        for (index, center) in dotPositions {
+    private func checkHitDot(at location: CGPoint, spacing: CGFloat, radius: CGFloat) {
+        for index in 0..<9 {
+            let center = dotCenter(for: index, spacing: spacing)
             let distance = hypot(location.x - center.x, location.y - center.y)
             if distance < radius && !selectedIndices.contains(index) {
                 selectedIndices.append(index)

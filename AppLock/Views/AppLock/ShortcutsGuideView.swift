@@ -42,8 +42,8 @@ public struct ShortcutsGuideView: View {
         ),
         GuideStep(
             id: 5,
-            title: "Thêm tác vụ: Mở ứng dụng AppLock",
-            description: "Nhấn 'Tiếp' -> Chọn hành động 'Mở ứng dụng' -> Chọn 'AppLock'. Hoàn tất!",
+            title: "Thêm tác vụ: Mở AppLock hoặc Mở URL",
+            description: "Chọn hành động 'Mở ứng dụng' -> Chọn 'AppLock' (hoặc chọn 'Mở URL' và dán link 'applock://lock?app=TênApp' để hiện chính xác tên ứng dụng bị khóa).",
             iconName: "shield.lefthalf.filled",
             color: AppColors.cyan
         )
@@ -125,6 +125,41 @@ public struct ShortcutsGuideView: View {
                                 }
                                 .padding(16)
                             }
+                        }
+                        
+                        // URL Scheme example card
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "link.circle.fill")
+                                        .foregroundColor(AppColors.cyan)
+                                    Text("Link URL Scheme để kích hoạt khóa:")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(AppColors.textPrimary)
+                                }
+                                
+                                Text("applock://lock?app=TênỨngDụng")
+                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(AppColors.cyan)
+                                    .padding(8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(AppColors.backgroundSecondary)
+                                    .cornerRadius(8)
+                                
+                                Button(action: {
+                                    UIPasteboard.general.string = "applock://lock?app=Safari"
+                                    HapticManager.shared.notification(.success)
+                                }) {
+                                    HStack {
+                                        Image(systemName: "doc.on.doc.fill")
+                                        Text("Sao chép link mẫu (Safari)")
+                                    }
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(AppColors.emerald)
+                                }
+                                .padding(.top, 4)
+                            }
+                            .padding(14)
                         }
                         
                         // Quick open shortcuts button

@@ -66,8 +66,8 @@ public final class AppLockManager: ObservableObject {
         self.securityQuestion = defaults.string(forKey: Keys.securityQuestion) ?? "Tên thú cưng đầu tiên của bạn là gì?"
         self.securityAnswer = defaults.string(forKey: Keys.securityAnswer) ?? "Miu"
         
-        let savedPolicy = defaults.string(forKey: Keys.relockPolicy) ?? RelockPolicy.screenOff.rawValue
-        self.relockPolicy = RelockPolicy(rawValue: savedPolicy) ?? .screenOff
+        let savedPolicy = defaults.string(forKey: Keys.relockPolicy) ?? RelockPolicy.immediately.rawValue
+        self.relockPolicy = RelockPolicy(rawValue: savedPolicy) ?? .immediately
         self.isVibrationEnabled = defaults.object(forKey: Keys.isVibrationEnabled) == nil ? true : defaults.bool(forKey: Keys.isVibrationEnabled)
         
         // Load apps
@@ -115,8 +115,9 @@ public final class AppLockManager: ObservableObject {
             ]
         }
         
-        // If first launch, show lock overlay or setup
-        self.isShowingLockOverlay = !isFirstLaunch
+        // Always require authentication or setup at launch
+        self.isShowingLockOverlay = true
+        self.isAppUnlocked = false
     }
     
     // Save state helper
@@ -244,18 +245,45 @@ public final class AppLockManager: ObservableObject {
     }
     
     public func appBecameActive() {
-        guard !isFirstLaunch else { return }
+        if isFirstLaunch {
+            isShowingLockOverlay = true
+            return
+        }
         
-        if relockPolicy == .screenOff {
-            // Relock if device was locked or app was in background
-            if !isAppUnlocked {
-                isShowingLockOverlay = true
-            }
-        } else if relockPolicy == .oneMinute {
+        switch relockPolicy {
+        case .immediately:
+            isAppUnlocked = false
+            isShowingLockOverlay = true
+        case .screenOff:
+            isAppUnlocked = false
+            isShowingLockOverlay = true
+        case .oneMinute:
             if let lastBg = lastBackgroundDate, Date().timeIntervalSince(lastBg) > 60 {
                 isAppUnlocked = false
                 isShowingLockOverlay = true
             }
+        }
+    }
+    
+    // Deep Link & Apple Shortcuts Automation trigger
+    public func handleDeepLink(url: URL) {
+        guard url.scheme?.lowercased() == "applock" else { return }
+        
+        var targetAppName = "Ứng dụng được bảo vệ"
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+            if let appQuery = components.queryItems?.first(where: { $0.name.lowercased() == "app" })?.value,
+               !appQuery.isEmpty {
+                targetAppName = appQuery
+            } else if let host = components.host, !host.isEmpty && host.lowercased() != "lock" {
+                targetAppName = host
+            }
+        }
+        
+        self.currentLockedAppTarget = targetAppName
+        self.isAppUnlocked = false
+        self.isShowingLockOverlay = true
+        if isVibrationEnabled {
+            HapticManager.shared.notification(.warning)
         }
     }
     

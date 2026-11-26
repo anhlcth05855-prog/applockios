@@ -167,26 +167,11 @@ public struct VaultView: View {
                             Button(action: {
                                 viewingItem = item
                             }) {
-                                ZStack {
-                                    if let img = VaultManager.shared.loadPhoto(fileName: item.fileName) {
-                                        Image(uiImage: img)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(minWidth: 0, maxWidth: .infinity)
-                                            .frame(height: 110)
-                                            .clipped()
-                                            .cornerRadius(12)
-                                    } else {
-                                        Rectangle()
-                                            .fill(AppColors.cardBackground)
-                                            .frame(height: 110)
-                                            .cornerRadius(12)
-                                    }
-                                }
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                                )
+                                AsyncThumbnailView(fileName: item.fileName, type: .photo, cornerRadius: 12, height: 110)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                                    )
                             }
                         }
                     }
@@ -235,19 +220,7 @@ public struct VaultView: View {
                                 viewingItem = item
                             }) {
                                 ZStack(alignment: .bottomLeading) {
-                                    if let thumb = VaultManager.shared.generateVideoThumbnail(fileName: item.fileName) {
-                                        Image(uiImage: thumb)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(height: 130)
-                                            .clipped()
-                                            .cornerRadius(12)
-                                    } else {
-                                        Rectangle()
-                                            .fill(AppColors.cardBackground)
-                                            .frame(height: 130)
-                                            .cornerRadius(12)
-                                    }
+                                    AsyncThumbnailView(fileName: item.fileName, type: .video, cornerRadius: 12, height: 130)
                                     
                                     // Play icon overlay
                                     Image(systemName: "play.circle.fill")

@@ -5,6 +5,8 @@ public struct AppRowView: View {
     var onToggle: () -> Void
     var onTestLock: (() -> Void)? = nil
     
+    @State private var copiedUrl: Bool = false
+    
     public init(app: AppItem, onToggle: @escaping () -> Void, onTestLock: (() -> Void)? = nil) {
         self.app = app
         self.onToggle = onToggle
@@ -53,6 +55,24 @@ public struct AppRowView: View {
                 }
                 
                 Spacer()
+                
+                // Copy shortcut URL button (when locked)
+                if app.isLocked {
+                    Button(action: {
+                        let link = "applock://lock?app=\(app.appName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? app.appName)"
+                        UIPasteboard.general.string = link
+                        copiedUrl = true
+                        HapticManager.shared.notification(.success)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            copiedUrl = false
+                        }
+                    }) {
+                        Image(systemName: copiedUrl ? "checkmark.circle.fill" : "link.badge.plus")
+                            .font(.system(size: 17))
+                            .foregroundColor(copiedUrl ? AppColors.emerald : AppColors.cyan.opacity(0.8))
+                    }
+                    .padding(.trailing, 2)
+                }
                 
                 // Test lock button (preview lock screen)
                 if let onTestLock = onTestLock {

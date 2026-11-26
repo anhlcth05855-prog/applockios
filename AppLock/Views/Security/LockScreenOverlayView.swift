@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct LockScreenOverlayView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
+    @Environment(\.dismiss) private var dismiss
     
     @State private var enteredPin: String = ""
     @State private var selectedPattern: [Int] = []
@@ -214,6 +215,7 @@ public struct LockScreenOverlayView: View {
             recoveryError = nil
             showForgotSheet = false
             appLockManager.handleSuccessfulUnlock()
+            dismiss()
         } else {
             recoveryError = "Câu trả lời bảo mật không chính xác!"
             HapticManager.shared.notification(.error)
@@ -224,6 +226,7 @@ public struct LockScreenOverlayView: View {
         if appLockManager.verifyPIN(pin) {
             errorMessage = nil
             appLockManager.handleSuccessfulUnlock()
+            dismiss()
         } else {
             withAnimation(.default) {
                 shakeAttempts += 1
@@ -241,6 +244,7 @@ public struct LockScreenOverlayView: View {
                 appLockManager.handleSuccessfulUnlock()
                 selectedPattern = []
                 patternState = .normal
+                dismiss()
             }
         } else {
             patternState = .error
@@ -261,6 +265,7 @@ public struct LockScreenOverlayView: View {
                 if success {
                     await MainActor.run {
                         appLockManager.handleSuccessfulUnlock()
+                        dismiss()
                     }
                 }
             case .failure:

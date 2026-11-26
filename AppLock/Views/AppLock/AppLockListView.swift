@@ -6,8 +6,6 @@ public struct AppLockListView: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: AppFilter = .all
     @State private var showShortcutsGuide: Bool = false
-    @State private var showLockTestOverlay: Bool = false
-    @State private var testTargetAppName: String = ""
     
     enum AppFilter: String, CaseIterable {
         case all = "Tất cả"
@@ -205,9 +203,9 @@ public struct AppLockListView: View {
                                     appLockManager.toggleAppLock(id: app.id)
                                 },
                                 onTestLock: {
-                                    testTargetAppName = app.appName
                                     appLockManager.currentLockedAppTarget = app.appName
-                                    showLockTestOverlay = true
+                                    appLockManager.isAppUnlocked = false
+                                    appLockManager.isShowingLockOverlay = true
                                 }
                             )
                         }
@@ -220,9 +218,6 @@ public struct AppLockListView: View {
         }
         .sheet(isPresented: $showShortcutsGuide) {
             ShortcutsGuideView()
-        }
-        .fullScreenCover(isPresented: $showLockTestOverlay) {
-            LockScreenOverlayView()
         }
     }
 }

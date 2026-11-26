@@ -7,6 +7,7 @@ public final class VaultManager {
     public static let shared = VaultManager()
     
     private let fileManager = FileManager.default
+    private let memoryCache = NSCache<NSString, UIImage>()
     
     private var vaultRootURL: URL {
         let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -84,32 +85,100 @@ public final class VaultManager {
     
     // Load UIImage from Vault
     public func loadPhoto(fileName: String) -> UIImage? {
+        if let cached = memoryCache.object(forKey: fileName as NSString) {
+            return cached
+        }
         let fileURL = photosURL.appendingPathComponent(fileName)
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return UIImage(data: data)
+        guard let data = try? Data(contentsOf: fileURL), let image = UIImage(data: data) else { return nil }
+        memoryCache.setObject(image, forKey: fileName as NSString)
+        return image
     }
     
     // Load Intruder image
     public func loadIntruderPhoto(fileName: String) -> UIImage? {
+        let cacheKey = "intruder_\(fileName)"
+        if let cached = memoryCache.object(forKey: cacheKey as NSString) {
+            return cached
+        }
         let fileURL = intrudersURL.appendingPathComponent(fileName)
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return UIImage(data: data)
+        guard let data = try? Data(contentsOf: fileURL), let image = UIImage(data: data) else { return nil }
+        memoryCache.setObject(image, forKey: cacheKey as NSString)
+        return image
     }
     
-    // Generate video thumbnail
+    // Generate video thumbnail (with caching)
     public func generateVideoThumbnail(fileName: String) -> UIImage? {
+        let cacheKey = "vid_thumb_\(fileName)"
+        if let cached = memoryCache.object(forKey: cacheKey as NSString) {
+            return cached
+        }
         let videoURL = videosURL.appendingPathComponent(fileName)
         let asset = AVAsset(url: videoURL)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.maximumSize = CGSize(width: 320, height: 320)
         
         let time = CMTime(seconds: 0.5, preferredTimescale: 60)
         do {
             let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
-            return UIImage(cgImage: cgImage)
+            let thumb = UIImage(cgImage: cgImage)
+            memoryCache.setObject(thumb, forKey: cacheKey as NSString)
+            return thumb
         } catch {
             return nil
         }
+    }
+    
+    // Async high-performance loaders
+    public func loadPhotoThumbnailAsync(fileName: String) async -> UIImage? {
+        if let cached = memoryCache.object(forKey: fileName as NSString) {
+            return cached
+        }
+        return await Task.detached(priority: .userInitiated) { [weak self] () -> UIImage? in
+            guard let self = self else { return nil }
+            let fileURL = self.photosURL.appendingPathComponent(fileName)
+            guard let data = try? Data(contentsOf: fileURL),
+                  let image = UIImage(data: data) else { return nil }
+            let thumb = image.preparingThumbnail(of: CGSize(width: 240, height: 240)) ?? image
+            self.memoryCache.setObject(thumb, forKey: fileName as NSString)
+            return thumb
+        }.value
+    }
+    
+    public func loadVideoThumbnailAsync(fileName: String) async -> UIImage? {
+        let cacheKey = "vid_thumb_\(fileName)"
+        if let cached = memoryCache.object(forKey: cacheKey as NSString) {
+            return cached
+        }
+        return await Task.detached(priority: .userInitiated) { [weak self] () -> UIImage? in
+            guard let self = self else { return nil }
+            let videoURL = self.videosURL.appendingPathComponent(fileName)
+            let asset = AVAsset(url: videoURL)
+            let imageGenerator = AVAssetImageGenerator(asset: asset)
+            imageGenerator.appliesPreferredTrackTransform = true
+            imageGenerator.maximumSize = CGSize(width: 320, height: 320)
+            let time = CMTime(seconds: 0.5, preferredTimescale: 60)
+            guard let cgImage = try? imageGenerator.copyCGImage(at: time, actualTime: nil) else { return nil }
+            let thumb = UIImage(cgImage: cgImage)
+            self.memoryCache.setObject(thumb, forKey: cacheKey as NSString)
+            return thumb
+        }.value
+    }
+    
+    public func loadIntruderPhotoAsync(fileName: String) async -> UIImage? {
+        let cacheKey = "intruder_\(fileName)"
+        if let cached = memoryCache.object(forKey: cacheKey as NSString) {
+            return cached
+        }
+        return await Task.detached(priority: .userInitiated) { [weak self] () -> UIImage? in
+            guard let self = self else { return nil }
+            let fileURL = self.intrudersURL.appendingPathComponent(fileName)
+            guard let data = try? Data(contentsOf: fileURL),
+                  let image = UIImage(data: data) else { return nil }
+            let thumb = image.preparingThumbnail(of: CGSize(width: 160, height: 160)) ?? image
+            self.memoryCache.setObject(thumb, forKey: cacheKey as NSString)
+            return thumb
+        }.value
     }
     
     // Delete item from disk
