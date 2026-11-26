@@ -8,18 +8,18 @@ public enum TabItem: Int, CaseIterable {
     
     var title: String {
         switch self {
-        case .appLock: return "Khóa App"
-        case .vault: return "Két Riêng"
-        case .intruder: return "Xâm Nhập"
-        case .settings: return "Cài Đặt"
+        case .appLock: return "Khóa ứng dụng"
+        case .vault: return "Két riêng tư"
+        case .intruder: return "Kẻ xâm nhập"
+        case .settings: return "Cài đặt"
         }
     }
     
     var iconName: String {
         switch self {
-        case .appLock: return "lock.shield.fill"
-        case .vault: return "archivebox.fill"
-        case .intruder: return "camera.badge.ellipsis"
+        case .appLock: return "square.grid.2x2.fill"
+        case .vault: return "camera.viewfinder"
+        case .intruder: return "person.crop.circle"
         case .settings: return "gearshape.fill"
         }
     }
@@ -28,34 +28,61 @@ public enum TabItem: Int, CaseIterable {
 public struct MainTabView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     @State private var selectedTab: TabItem = .appLock
+    @State private var showPermissionGuideSheet: Bool = false
     
     public init() {}
     
+    private var lockedCount: Int {
+        appLockManager.apps.filter { $0.isLocked }.count
+    }
+    
     public var body: some View {
         ZStack(alignment: .bottom) {
-            // Tab Contents
-            TabView(selection: $selectedTab) {
-                AppLockListView()
-                    .tag(TabItem.appLock)
-                
-                VaultView()
-                    .tag(TabItem.vault)
-                
-                IntruderLogView()
-                    .tag(TabItem.intruder)
-                
-                SettingsView()
-                    .tag(TabItem.settings)
-            }
-            .ignoresSafeArea(edges: .bottom)
+            AppColors.background.ignoresSafeArea()
             
-            // Custom Cyber Floating Bottom Nav Bar
-            customBottomBar
+            VStack(spacing: 0) {
+                // Persistent Top App Bar matching video (AppLock / Guard Private Protection / X ĐÃ KHÓA)
+                topAppBar
+                
+                // Main Content Area
+                ZStack {
+                    switch selectedTab {
+                    case .appLock:
+                        AppLockListView()
+                    case .vault:
+                        VaultView()
+                    case .intruder:
+                        IntruderLogView()
+                    case .settings:
+                        SettingsView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                // Solid Bottom Navigation Bar matching video
+                bottomNavBar
+            }
+            
+            // Floating Toast Pill above bottom nav
+            if let toast = appLockManager.toastMessage {
+                ToastBannerView(message: toast)
+                    .padding(.bottom, 78)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(10)
+            }
+        }
+        .sheet(isPresented: $showPermissionGuideSheet) {
+            PermissionStatusView()
         }
         .fullScreenCover(isPresented: $appLockManager.isShowingLockOverlay) {
             if appLockManager.isFirstLaunch {
                 SecuritySetupFlowView {
                     appLockManager.isShowingLockOverlay = false
+                    if !appLockManager.isAutomationVerified {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            showPermissionGuideSheet = true
+                        }
+                    }
                 }
             } else {
                 LockScreenOverlayView()
@@ -63,54 +90,79 @@ public struct MainTabView: View {
         }
     }
     
-    private var customBottomBar: some View {
-        HStack(spacing: 0) {
-            ForEach(TabItem.allCases, id: \.self) { tab in
-                let isSelected = selectedTab == tab
+    private var topAppBar: some View {
+        HStack(spacing: 12) {
+            // Cyan Shield Checkmark Icon
+            Image(systemName: "checkmark.shield.fill")
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundColor(AppColors.cyan)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AppLock")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
                 
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedTab = tab
-                    }
-                    if appLockManager.isVibrationEnabled {
-                        HapticManager.shared.selection()
-                    }
-                }) {
-                    VStack(spacing: 4) {
-                        ZStack {
-                            if isSelected {
-                                Circle()
-                                    .fill(AppColors.cyan.opacity(0.18))
-                                    .frame(width: 38, height: 38)
-                                    .shadow(color: AppColors.cyan.opacity(0.4), radius: 6)
-                            }
-                            
-                            Image(systemName: tab.iconName)
-                                .font(.system(size: isSelected ? 20 : 18, weight: isSelected ? .bold : .medium))
-                                .foregroundColor(isSelected ? AppColors.cyan : AppColors.textSecondary)
-                        }
-                        
-                        Text(tab.title)
-                            .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                            .foregroundColor(isSelected ? AppColors.cyan : AppColors.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                Text("Guard Private Protection")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.cyan)
+            }
+            
+            Spacer()
+            
+            // Cyan Capsule Status Badge ("3 ĐÃ KHÓA")
+            Button(action: {
+                showPermissionGuideSheet = true
+            }) {
+                Text("\(lockedCount) ĐÃ KHÓA")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.background)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.cyan)
+                    )
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.top, 10)
-        .padding(.bottom, 22)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(AppColors.backgroundSecondary.opacity(0.95))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
-        )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 6)
+        .padding(.bottom, 14)
+        .background(AppColors.backgroundSecondary)
+    }
+    
+    private var bottomNavBar: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.6))
+                .frame(height: 1)
+            
+            HStack(spacing: 0) {
+                ForEach(TabItem.allCases, id: \.self) { tab in
+                    let isSelected = selectedTab == tab
+                    
+                    Button(action: {
+                        selectedTab = tab
+                        if appLockManager.isVibrationEnabled {
+                            HapticManager.shared.selection()
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.iconName)
+                                .font(.system(size: 20, weight: isSelected ? .bold : .regular))
+                                .foregroundColor(isSelected ? AppColors.cyan : AppColors.textMuted)
+                            
+                            Text(tab.title)
+                                .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                                .foregroundColor(isSelected ? AppColors.cyan : AppColors.textMuted)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 10)
+                        .padding(.bottom, 8)
+                    }
+                }
+            }
+            .background(AppColors.backgroundSecondary)
+        }
+        .background(AppColors.backgroundSecondary.ignoresSafeArea(edges: .bottom))
     }
 }

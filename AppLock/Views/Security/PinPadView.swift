@@ -6,8 +6,6 @@ public struct PinPadView: View {
     var onComplete: (String) -> Void
     var onBiometricTap: (() -> Void)? = nil
     var showBiometricButton: Bool = true
-    
-    // Shake animation state
     var shakeAttempts: CGFloat = 0
     
     public init(
@@ -27,35 +25,26 @@ public struct PinPadView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 28) {
-            // Pin dots indicator
-            HStack(spacing: 20) {
+        VStack(spacing: 30) {
+            // 4 PIN Dots matching video (00:49 - 00:52)
+            HStack(spacing: 18) {
                 ForEach(0..<maxDigits, id: \.self) { index in
-                    ZStack {
-                        Circle()
-                            .stroke(
-                                index < enteredPin.count ? AppColors.cyan : AppColors.cardBorder,
-                                lineWidth: 2
-                            )
-                            .frame(width: 18, height: 18)
-                        
-                        if index < enteredPin.count {
+                    let filled = index < enteredPin.count
+                    Circle()
+                        .fill(filled ? AppColors.cyan : AppColors.keypadNormal)
+                        .frame(width: 16, height: 16)
+                        .overlay(
                             Circle()
-                                .fill(AppColors.cyan)
-                                .frame(width: 12, height: 12)
-                                .shadow(color: AppColors.cyan.opacity(0.8), radius: 6)
-                                .transition(.scale)
-                        }
-                    }
+                                .stroke(filled ? AppColors.cyan : AppColors.cardBorder, lineWidth: 1.5)
+                        )
                 }
             }
             .modifier(ShakeEffect(animatableData: shakeAttempts))
-            .padding(.vertical, 8)
             
-            // Numeric Keypad
-            VStack(spacing: 16) {
+            // 3x4 Circular Keypad Grid (72x72 buttons in #1D2A48)
+            VStack(spacing: 18) {
                 ForEach(0..<3) { row in
-                    HStack(spacing: 24) {
+                    HStack(spacing: 22) {
                         ForEach(1...3, id: \.self) { col in
                             let digit = "\(row * 3 + col)"
                             keypadButton(digit: digit)
@@ -63,36 +52,34 @@ public struct PinPadView: View {
                     }
                 }
                 
-                // Bottom row: Biometric, 0, Backspace
-                HStack(spacing: 24) {
-                    // Biometric button or empty
+                // Bottom Row: Biometric, 0, Backspace
+                HStack(spacing: 22) {
                     if showBiometricButton, let onBiometricTap = onBiometricTap {
                         Button(action: onBiometricTap) {
                             ZStack {
                                 Circle()
-                                    .fill(AppColors.cardBackground.opacity(0.6))
+                                    .fill(AppColors.keypadNormal)
                                     .frame(width: 72, height: 72)
                                     .overlay(
                                         Circle().stroke(AppColors.cardBorder, lineWidth: 1)
                                     )
                                 
                                 Image(systemName: BiometricManager.shared.getAvailableBiometricType().iconName)
-                                    .font(.system(size: 26, weight: .medium))
+                                    .font(.system(size: 24, weight: .medium))
                                     .foregroundColor(AppColors.cyan)
                             }
                         }
+                        .buttonStyle(KeypadPressStyle())
                     } else {
-                        Spacer()
-                            .frame(width: 72, height: 72)
+                        Spacer().frame(width: 72, height: 72)
                     }
                     
                     keypadButton(digit: "0")
                     
-                    // Backspace button
                     Button(action: backspace) {
                         ZStack {
                             Circle()
-                                .fill(AppColors.cardBackground.opacity(0.6))
+                                .fill(AppColors.keypadNormal)
                                 .frame(width: 72, height: 72)
                                 .overlay(
                                     Circle().stroke(AppColors.cardBorder, lineWidth: 1)
@@ -100,9 +87,10 @@ public struct PinPadView: View {
                             
                             Image(systemName: "delete.left.fill")
                                 .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(AppColors.textSecondary)
+                                .foregroundColor(AppColors.textPrimary)
                         }
                     }
+                    .buttonStyle(KeypadPressStyle())
                 }
             }
         }
@@ -115,15 +103,14 @@ public struct PinPadView: View {
         }) {
             ZStack {
                 Circle()
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.keypadNormal)
                     .frame(width: 72, height: 72)
                     .overlay(
                         Circle().stroke(AppColors.cardBorder, lineWidth: 1)
                     )
-                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
                 
                 Text(digit)
-                    .font(.system(size: 28, weight: .medium, design: .rounded))
+                    .font(.system(size: 26, weight: .medium))
                     .foregroundColor(AppColors.textPrimary)
             }
         }
@@ -132,32 +119,37 @@ public struct PinPadView: View {
     
     private func appendDigit(_ digit: String) {
         guard enteredPin.count < maxDigits else { return }
-        HapticManager.shared.impact(.light)
+        if AppLockManager.shared.isVibrationEnabled {
+            HapticManager.shared.impact(.light)
+        }
         enteredPin.append(digit)
         
         if enteredPin.count == maxDigits {
-            onComplete(enteredPin)
+            let submitted = enteredPin
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                onComplete(submitted)
+            }
         }
     }
     
     private func backspace() {
         guard !enteredPin.isEmpty else { return }
-        HapticManager.shared.impact(.light)
+        if AppLockManager.shared.isVibrationEnabled {
+            HapticManager.shared.impact(.light)
+        }
         enteredPin.removeLast()
     }
 }
 
-// Button press animation style
 struct KeypadPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
-            .opacity(configuration.isPressed ? 0.8 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .brightness(configuration.isPressed ? 0.12 : 0)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
+            .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)
     }
 }
 
-// Shake Effect Modifier
 public struct ShakeEffect: AnimatableModifier {
     public var animatableData: CGFloat
     

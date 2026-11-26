@@ -31,7 +31,7 @@ public struct AppItem: Identifiable, Codable, Hashable {
         self.isRecommended = isRecommended
         self.iconSymbol = iconSymbol
         self.category = category
-        self.urlSchemes = urlSchemes
+        self.urlSchemes = urlSchemes.isEmpty ? AppItem.knownSchemes(for: appName) : urlSchemes
     }
     
     enum CodingKeys: String, CodingKey {
@@ -81,13 +81,15 @@ public extension AppItem {
             return ["googlegmail://"]
         } else if lower.contains("chrome") {
             return ["googlechrome://"]
+        } else if lower.contains("1.1.1.1") || lower.contains("warp") {
+            return ["warp://"]
         } else if lower.contains("locket") {
             return ["locket://"]
         } else if lower.contains("free fire") || lower.contains("freefire") {
             return ["freefire://"]
         } else if lower.contains("momo") {
             return ["momo://"]
-        } else if lower.contains("ảnh") || lower.contains("photo") {
+        } else if lower.contains("ảnh") || lower.contains("album") || lower.contains("photo") {
             return ["photos-redirect://"]
         } else if lower.contains("safari") {
             return ["x-web-search://"]
@@ -104,36 +106,32 @@ public extension AppItem {
     }
     
     static let defaultApps: [AppItem] = [
-        // Mạng xã hội & Nhắn tin phổ biến
+        AppItem(bundleId: "com.apple.mobileslideshow", appName: "Ảnh", isLocked: true, isSystemApp: true, isRecommended: true, iconSymbol: "photo.fill", category: "Đa phương tiện", urlSchemes: ["photos-redirect://"]),
         AppItem(bundleId: "com.facebook.Facebook", appName: "Facebook", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "f.circle.fill", category: "Mạng xã hội", urlSchemes: ["fb://"]),
-        AppItem(bundleId: "com.facebook.Messenger", appName: "Messenger", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "message.fill", category: "Nhắn tin", urlSchemes: ["fb-messenger://"]),
-        AppItem(bundleId: "com.zing.zalo", appName: "Zalo", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "bubble.left.and.bubble.right.fill", category: "Nhắn tin", urlSchemes: ["zalo://"]),
-        AppItem(bundleId: "com.burbn.instagram", appName: "Instagram", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "camera.fill", category: "Mạng xã hội", urlSchemes: ["instagram://"]),
-        AppItem(bundleId: "com.ss.iphone.ugc.Ame", appName: "TikTok", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "music.note", category: "Mạng xã hội", urlSchemes: ["snssdk1180://", "snssdk1233://", "tiktok://"]),
-        AppItem(bundleId: "com.hammerandchisel.discord", appName: "Discord", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "gamecontroller.fill", category: "Nhắn tin", urlSchemes: ["discord://"]),
+        AppItem(bundleId: "com.google.ios.youtube", appName: "YouTube", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "play.rectangle.fill", category: "Đa phương tiện", urlSchemes: ["youtube://"]),
+        AppItem(bundleId: "com.zing.zalo", appName: "Zalo", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "bubble.left.and.bubble.right.fill", category: "Nhắn tin", urlSchemes: ["zalo://"]),
+        AppItem(bundleId: "com.facebook.Messenger", appName: "Messenger", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "bolt.horizontal.circle.fill", category: "Nhắn tin", urlSchemes: ["fb-messenger://"]),
         AppItem(bundleId: "ph.telegra.Telegraph", appName: "Telegram", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "paperplane.fill", category: "Nhắn tin", urlSchemes: ["tg://"]),
-        AppItem(bundleId: "com.locket.Locket", appName: "Locket", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "heart.rectangle.fill", category: "Mạng xã hội", urlSchemes: ["locket://"]),
-        
-        // Đa phương tiện & Mua sắm & Giải trí
-        AppItem(bundleId: "com.apple.mobileslideshow", appName: "Ảnh (Photos)", isLocked: true, isSystemApp: true, isRecommended: true, iconSymbol: "photo.stack.fill", category: "Đa phương tiện", urlSchemes: ["photos-redirect://"]),
-        AppItem(bundleId: "com.google.ios.youtube", appName: "YouTube", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "play.rectangle.fill", category: "Đa phương tiện", urlSchemes: ["youtube://"]),
+        AppItem(bundleId: "com.google.chrome.ios", appName: "Chrome", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "globe", category: "Trình duyệt", urlSchemes: ["googlechrome://"]),
+        AppItem(bundleId: "com.google.Gmail", appName: "Gmail", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "envelope.fill", category: "Email", urlSchemes: ["googlegmail://"]),
+        AppItem(bundleId: "com.burbn.instagram", appName: "Instagram", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "camera.fill", category: "Mạng xã hội", urlSchemes: ["instagram://"]),
+        AppItem(bundleId: "com.ss.iphone.ugc.Ame", appName: "TikTok", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "music.note", category: "Mạng xã hội", urlSchemes: ["snssdk1180://", "snssdk1233://", "tiktok://"]),
+        AppItem(bundleId: "com.cloudflare.onedotonedotonedot", appName: "1.1.1.1", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "network", category: "Tiện ích", urlSchemes: ["warp://"]),
+        AppItem(bundleId: "com.hammerandchisel.discord", appName: "Discord", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "gamecontroller.fill", category: "Nhắn tin", urlSchemes: ["discord://"]),
         AppItem(bundleId: "com.beeasy.shopee.vn", appName: "Shopee", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "bag.fill", category: "Mua sắm", urlSchemes: ["shopeevn://", "shopee://"]),
+        AppItem(bundleId: "com.locket.Locket", appName: "Locket", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "heart.fill", category: "Mạng xã hội", urlSchemes: ["locket://"]),
         AppItem(bundleId: "com.dts.freefireth", appName: "Free Fire", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "flame.fill", category: "Trò chơi", urlSchemes: ["freefire://"]),
-        
-        // Ngân hàng & Tài chính
-        AppItem(bundleId: "com.mservice.momopay", appName: "MoMo", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "wallet.pass.fill", category: "Ví điện tử", urlSchemes: ["momo://"]),
-        AppItem(bundleId: "vn.vcb.digibank", appName: "VCB Digibank", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "banknote.fill", category: "Ngân hàng"),
-        AppItem(bundleId: "com.mbmobile", appName: "MB Bank", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "creditcard.fill", category: "Ngân hàng"),
-        AppItem(bundleId: "com.techcombank.mobile", appName: "Techcombank Mobile", isLocked: true, isSystemApp: false, isRecommended: true, iconSymbol: "dollarsign.circle.fill", category: "Ngân hàng"),
-        
-        // Trình duyệt & Hệ thống
-        AppItem(bundleId: "com.apple.mobilesafari", appName: "Safari", isLocked: true, isSystemApp: true, isRecommended: true, iconSymbol: "safari.fill", category: "Trình duyệt", urlSchemes: ["x-web-search://"]),
-        AppItem(bundleId: "com.google.chrome.ios", appName: "Chrome", isLocked: false, isSystemApp: false, isRecommended: false, iconSymbol: "globe", category: "Trình duyệt", urlSchemes: ["googlechrome://"]),
-        AppItem(bundleId: "com.google.Gmail", appName: "Gmail", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "envelope.badge.fill", category: "Email", urlSchemes: ["googlegmail://"]),
-        AppItem(bundleId: "com.apple.MobileSMS", appName: "Tin nhắn (Messages)", isLocked: true, isSystemApp: true, isRecommended: true, iconSymbol: "ellipsis.message.fill", category: "Hệ thống", urlSchemes: ["sms://"]),
-        AppItem(bundleId: "com.apple.Preferences", appName: "Cài đặt (Settings)", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "gearshape.fill", category: "Hệ thống"),
+        AppItem(bundleId: "com.mservice.momopay", appName: "MoMo", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "wallet.pass.fill", category: "Ví điện tử", urlSchemes: ["momo://"]),
+        AppItem(bundleId: "vn.vcb.digibank", appName: "VCB Digibank", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "banknote.fill", category: "Ngân hàng"),
+        AppItem(bundleId: "com.mbmobile", appName: "MB Bank", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "creditcard.fill", category: "Ngân hàng"),
+        AppItem(bundleId: "com.techcombank.mobile", appName: "Techcombank Mobile", isLocked: false, isSystemApp: false, isRecommended: true, iconSymbol: "dollarsign.circle.fill", category: "Ngân hàng"),
+        AppItem(bundleId: "com.apple.Preferences", appName: "Cài đặt", isLocked: true, isSystemApp: true, isRecommended: true, iconSymbol: "gearshape.fill", category: "Hệ thống"),
+        AppItem(bundleId: "com.apple.mobilesafari", appName: "Safari", isLocked: false, isSystemApp: true, isRecommended: true, iconSymbol: "safari.fill", category: "Hệ thống", urlSchemes: ["x-web-search://"]),
+        AppItem(bundleId: "com.apple.camera", appName: "Máy ảnh", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "camera.fill", category: "Hệ thống"),
+        AppItem(bundleId: "com.apple.MobileSMS", appName: "Tin nhắn", isLocked: false, isSystemApp: true, isRecommended: true, iconSymbol: "message.fill", category: "Hệ thống", urlSchemes: ["sms://"]),
         AppItem(bundleId: "com.apple.mobilemail", appName: "Mail", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "envelope.fill", category: "Hệ thống", urlSchemes: ["message://"]),
-        AppItem(bundleId: "com.apple.mobilenotes", appName: "Ghi chú (Notes)", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "note.text", category: "Hệ thống", urlSchemes: ["mobilenotes://"]),
-        AppItem(bundleId: "com.apple.DocumentsApp", appName: "Tệp (Files)", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "folder.fill", category: "Hệ thống", urlSchemes: ["shareddocuments://"])
+        AppItem(bundleId: "com.apple.AppStore", appName: "App Store", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "a.square.fill", category: "Hệ thống"),
+        AppItem(bundleId: "com.apple.mobilenotes", appName: "Ghi chú", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "note.text", category: "Hệ thống", urlSchemes: ["mobilenotes://"]),
+        AppItem(bundleId: "com.apple.DocumentsApp", appName: "Tệp", isLocked: false, isSystemApp: true, isRecommended: false, iconSymbol: "folder.fill", category: "Hệ thống", urlSchemes: ["shareddocuments://"])
     ]
 }

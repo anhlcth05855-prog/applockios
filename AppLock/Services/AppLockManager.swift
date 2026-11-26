@@ -60,8 +60,11 @@ public final class AppLockManager: ObservableObject {
     @Published public var isExternalIntercept: Bool = false
     @Published public var failedAttemptsCount: Int = 0
     @Published public var lastBackgroundDate: Date? = nil
+    @Published public var toastMessage: String? = nil
+    @Published public var showPermissionGuideOnLaunch: Bool = false
     
     private var didEnterBackground: Bool = false
+    private var toastWorkItem: DispatchWorkItem? = nil
     
     private init() {
         let defaults = UserDefaults.standard
@@ -204,6 +207,23 @@ public final class AppLockManager: ObservableObject {
         if isVibrationEnabled {
             HapticManager.shared.notification(.success)
         }
+        showToast("Đã kích hoạt khóa lại toàn bộ ứng dụng!")
+    }
+    
+    public func showToast(_ message: String) {
+        toastWorkItem?.cancel()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            self.toastMessage = message
+        }
+        let item = DispatchWorkItem { [weak self] in
+            Task { @MainActor in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    self?.toastMessage = nil
+                }
+            }
+        }
+        toastWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: item)
     }
     
     // Verification methods

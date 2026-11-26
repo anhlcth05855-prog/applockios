@@ -1,27 +1,28 @@
 import SwiftUI
 
+/// Single-page Passcode & Pattern Setup matching 00:20 - 00:36 in the reference video
 public struct SecuritySetupFlowView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     var isChangingPasscode: Bool = false
     var onFinish: () -> Void
     
-    enum Step {
-        case selectType
-        case enterPasscode
-        case confirmPasscode
-        case securityQuestion
-    }
+    private let securityQuestions = [
+        "Tên thú cưng đầu tiên của bạn?",
+        "Tên trường tiểu học đầu tiên của bạn?",
+        "Thành phố nơi mẹ bạn sinh ra?",
+        "Bộ phim yêu thích nhất của bạn?",
+        "Món ăn yêu thích nhất của bạn?"
+    ]
     
-    @State private var currentStep: Step = .selectType
     @State private var selectedLockType: LockType = .pin
-    @State private var firstPin: String = ""
-    @State private var confirmPin: String = ""
-    @State private var firstPattern: [Int] = []
-    @State private var confirmPattern: [Int] = []
-    @State private var questionInput: String = "Tên thú cưng đầu tiên của bạn là gì?"
+    @State private var pin1: String = ""
+    @State private var pin2: String = ""
+    @State private var patternIndices: [Int] = []
+    @State private var recordedPattern: [Int] = []
+    @State private var patternState: PatternState = .normal
+    @State private var selectedQuestion: String = "Tên thú cưng đầu tiên của bạn?"
     @State private var answerInput: String = ""
-    @State private var errorMessage: String? = nil
-    @State private var shakeAttempts: CGFloat = 0
+    @State private var localToast: String? = nil
     
     public init(isChangingPasscode: Bool = false, onFinish: @escaping () -> Void) {
         self.isChangingPasscode = isChangingPasscode
@@ -29,223 +30,277 @@ public struct SecuritySetupFlowView: View {
     }
     
     public var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             AppColors.background.ignoresSafeArea()
             
-            VStack(spacing: 24) {
-                // Header
-                CyberHeader(
-                    title: isChangingPasscode ? "Đổi mật khẩu" : "Thiết lập bảo vệ",
-                    subtitle: stepSubtitle,
-                    badgeText: stepBadge,
-                    badgeColor: AppColors.cyan
-                )
-                
-                if let err = errorMessage {
-                    Text(err)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.coral)
-                        .padding(.horizontal)
-                        .transition(.opacity)
+            VStack(spacing: 0) {
+                if isChangingPasscode {
+                    HStack {
+                        Spacer()
+                        Button("Đóng") {
+                            onFinish()
+                        }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.cyan)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
                 }
                 
-                Spacer()
-                
-                // Step Content
-                switch currentStep {
-                case .selectType:
-                    selectTypeView
-                case .enterPasscode:
-                    enterPasscodeView(isConfirm: false)
-                case .confirmPasscode:
-                    enterPasscodeView(isConfirm: true)
-                case .securityQuestion:
-                    securityQuestionView
-                }
-                
-                Spacer()
-            }
-        }
-    }
-    
-    private var stepBadge: String {
-        switch currentStep {
-        case .selectType: return "Bước 1/4"
-        case .enterPasscode: return "Bước 2/4"
-        case .confirmPasscode: return "Bước 3/4"
-        case .securityQuestion: return "Bước 4/4"
-        }
-    }
-    
-    private var stepSubtitle: String {
-        switch currentStep {
-        case .selectType: return "Chọn phương thức khóa ưa thích của bạn"
-        case .enterPasscode: return "Tạo mật mã bảo vệ mới"
-        case .confirmPasscode: return "Nhập lại mật mã để xác nhận"
-        case .securityQuestion: return "Cài đặt câu hỏi dự phòng khi quên mật khẩu"
-        }
-    }
-    
-    // Step 1: Select Type
-    private var selectTypeView: some View {
-        VStack(spacing: 16) {
-            Button(action: {
-                selectedLockType = .pin
-                currentStep = .enterPasscode
-            }) {
-                GlassCard {
-                    HStack(spacing: 16) {
-                        Image(systemName: "number.circle.fill")
-                            .font(.system(size: 32))
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Top Shield Icon (64x64)
+                        Image(systemName: "checkmark.shield.fill")
+                            .font(.system(size: 56, weight: .semibold))
                             .foregroundColor(AppColors.cyan)
+                            .padding(.top, isChangingPasscode ? 8 : 28)
                         
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Mã PIN 4 số")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(AppColors.textPrimary)
-                            Text("Bàn phím số quen thuộc, nhanh chóng")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppColors.textSecondary)
+                        Text("Thiết Lập Mật Khẩu Khóa")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(AppColors.textPrimary)
+                            .padding(.top, 14)
+                        
+                        Text("Chọn phương thức bảo mật chính cho AppLock")
+                            .font(.system(size: 14))
+                            .foregroundColor(AppColors.textSecondary)
+                            .padding(.top, 6)
+                        
+                        // Segmented PIN vs Pattern Selector (matching 00:20 & 00:28)
+                        HStack(spacing: 0) {
+                            Button(action: {
+                                selectedLockType = .pin
+                                HapticManager.shared.selection()
+                            }) {
+                                Text("Mã PIN 4 số")
+                                    .font(.system(size: 14, weight: selectedLockType == .pin ? .bold : .medium))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 40)
+                                    .background(
+                                        Capsule().fill(selectedLockType == .pin ? AppColors.cyan : Color.clear)
+                                    )
+                                    .foregroundColor(selectedLockType == .pin ? AppColors.background : AppColors.textSecondary)
+                            }
+                            
+                            Button(action: {
+                                selectedLockType = .pattern
+                                HapticManager.shared.selection()
+                            }) {
+                                Text("Hình vẽ mẫu")
+                                    .font(.system(size: 14, weight: selectedLockType == .pattern ? .bold : .medium))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 40)
+                                    .background(
+                                        Capsule().fill(selectedLockType == .pattern ? AppColors.cyan : Color.clear)
+                                    )
+                                    .foregroundColor(selectedLockType == .pattern ? AppColors.background : AppColors.textSecondary)
+                            }
+                        }
+                        .padding(4)
+                        .background(
+                            Capsule()
+                                .fill(AppColors.cardBackground)
+                                .overlay(Capsule().stroke(AppColors.cardBorder, lineWidth: 1))
+                        )
+                        .padding(.top, 24)
+                        
+                        // PIN or Pattern Input Area
+                        if selectedLockType == .pin {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Nhập mã PIN gồm 4 chữ số:")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.cyan)
+                                    .padding(.top, 20)
+                                
+                                SecureField("• • • •", text: $pin1)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .frame(height: 52)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(AppColors.inputBackground)
+                                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
+                                    )
+                                    .onChange(of: pin1) { val in
+                                        let filtered = val.filter { $0.isNumber }
+                                        pin1 = String(filtered.prefix(4))
+                                    }
+                                
+                                Text("Xác nhận lại mã PIN 4 chữ số:")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.cyan)
+                                    .padding(.top, 8)
+                                
+                                SecureField("• • • •", text: $pin2)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .frame(height: 52)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(AppColors.inputBackground)
+                                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
+                                    )
+                                    .onChange(of: pin2) { val in
+                                        let filtered = val.filter { $0.isNumber }
+                                        pin2 = String(filtered.prefix(4))
+                                    }
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                Text("Vẽ hình mẫu của bạn (nối ít nhất 4 điểm):")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.cyan)
+                                    .padding(.top, 20)
+                                
+                                PatternLockView(
+                                    selectedIndices: $patternIndices,
+                                    state: patternState,
+                                    onComplete: { drawn in
+                                        if drawn.count >= 4 {
+                                            recordedPattern = drawn
+                                            patternState = .success
+                                            showLocalToast("Đã ghi nhận hình vẽ mẫu!")
+                                        } else {
+                                            patternState = .error
+                                            showLocalToast("Vui lòng nối ít nhất 4 điểm!")
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                                patternIndices = []
+                                                patternState = .normal
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                         }
                         
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(AppColors.textSecondary)
+                        // Security Question Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Câu hỏi bảo mật (Dùng khi quên mật khẩu):")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(AppColors.textPrimary)
+                                .padding(.top, 26)
+                            
+                            Menu {
+                                ForEach(securityQuestions, id: \.self) { q in
+                                    Button(q) { selectedQuestion = q }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(selectedQuestion)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(AppColors.textPrimary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Image(systemName: "arrowtriangle.down.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                .padding(.horizontal, 14)
+                                .frame(height: 48)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppColors.inputBackground)
+                                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
+                                )
+                            }
+                            
+                            TextField("Nhập câu trả lời của bạn...", text: $answerInput)
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.textPrimary)
+                                .padding(.horizontal, 14)
+                                .frame(height: 48)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppColors.inputBackground)
+                                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
+                                )
+                        }
+                        
+                        // Confirm & Save Button matching video (00:36)
+                        Button(action: saveSetup) {
+                            Text("Xác Nhận & Lưu Thiết Lập")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(AppColors.background)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(
+                                    Capsule()
+                                        .fill(AppColors.cyan)
+                                )
+                        }
+                        .padding(.top, 28)
+                        .padding(.bottom, 36)
                     }
-                    .padding(20)
+                    .padding(.horizontal, 24)
                 }
             }
             
-            Button(action: {
-                selectedLockType = .pattern
-                currentStep = .enterPasscode
-            }) {
-                GlassCard {
-                    HStack(spacing: 16) {
-                        Image(systemName: "circle.grid.3x3.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(AppColors.emerald)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Hình vẽ mẫu (Pattern)")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(AppColors.textPrimary)
-                            Text("Vẽ nối 9 điểm bảo mật trực quan")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                        
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                    .padding(20)
+            if let toast = localToast {
+                ToastBannerView(message: toast)
+                    .padding(.bottom, 32)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onAppear {
+            selectedLockType = appLockManager.lockType
+            if isChangingPasscode {
+                answerInput = appLockManager.securityAnswer
+                if securityQuestions.contains(appLockManager.securityQuestion) {
+                    selectedQuestion = appLockManager.securityQuestion
                 }
             }
         }
-        .padding(.horizontal, 24)
     }
     
-    // Step 2 & 3: Enter / Confirm Passcode
-    @ViewBuilder
-    private func enterPasscodeView(isConfirm: Bool) -> some View {
+    private func showLocalToast(_ msg: String) {
+        withAnimation { localToast = msg }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation { localToast = nil }
+        }
+    }
+    
+    private func saveSetup() {
+        let trimmedAnswer = answerInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedAnswer.isEmpty else {
+            HapticManager.shared.notification(.error)
+            showLocalToast("Vui lòng nhập câu trả lời bảo mật!")
+            return
+        }
+        
         if selectedLockType == .pin {
-            PinPadView(
-                enteredPin: isConfirm ? $confirmPin : $firstPin,
-                shakeAttempts: shakeAttempts,
-                showBiometricButton: false,
-                onComplete: { pin in
-                    if !isConfirm {
-                        currentStep = .confirmPasscode
-                    } else {
-                        if confirmPin == firstPin {
-                            errorMessage = nil
-                            currentStep = .securityQuestion
-                        } else {
-                            withAnimation { shakeAttempts += 1 }
-                            errorMessage = "Mã PIN xác nhận không khớp. Vui lòng nhập lại!"
-                            confirmPin = ""
-                            HapticManager.shared.notification(.error)
-                        }
-                    }
-                }
-            )
-        } else {
-            PatternLockView(
-                selectedIndices: isConfirm ? $confirmPattern : $firstPattern,
-                onComplete: { pattern in
-                    if !isConfirm {
-                        currentStep = .confirmPasscode
-                    } else {
-                        if confirmPattern == firstPattern {
-                            errorMessage = nil
-                            currentStep = .securityQuestion
-                        } else {
-                            errorMessage = "Hình vẽ không khớp. Vui lòng thử lại!"
-                            confirmPattern = []
-                            HapticManager.shared.notification(.error)
-                        }
-                    }
-                }
-            )
-        }
-    }
-    
-    // Step 4: Security Question
-    private var securityQuestionView: some View {
-        VStack(spacing: 20) {
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Câu hỏi bí mật:")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(AppColors.cyan)
-                    
-                    TextField("Câu hỏi bảo mật", text: $questionInput)
-                        .foregroundColor(AppColors.textPrimary)
-                        .padding(10)
-                        .background(AppColors.backgroundSecondary)
-                        .cornerRadius(8)
-                    
-                    Divider().background(AppColors.cardBorder)
-                    
-                    Text("Câu trả lời của bạn:")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(AppColors.cyan)
-                    
-                    TextField("Nhập câu trả lời bí mật...", text: $answerInput)
-                        .foregroundColor(AppColors.textPrimary)
-                        .padding(10)
-                        .background(AppColors.backgroundSecondary)
-                        .cornerRadius(8)
-                }
-                .padding(20)
+            guard pin1.count == 4 else {
+                HapticManager.shared.notification(.error)
+                showLocalToast("Mã PIN phải đủ 4 chữ số!")
+                return
             }
-            .padding(.horizontal, 24)
-            
-            Button(action: finishSetup) {
-                Text("Hoàn tất & Kích hoạt")
-                    .frame(maxWidth: .infinity)
+            guard pin1 == pin2 else {
+                HapticManager.shared.notification(.error)
+                showLocalToast("Hai mã PIN không trùng khớp!")
+                return
             }
-            .buttonStyle(CyberButtonStyle(primaryColor: AppColors.emerald))
-            .padding(.horizontal, 24)
-            .disabled(answerInput.trimmingCharacters(in: .whitespaces).isEmpty)
-            .opacity(answerInput.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1.0)
-        }
-    }
-    
-    private func finishSetup() {
-        appLockManager.lockType = selectedLockType
-        if selectedLockType == .pin {
-            appLockManager.pin = firstPin
+            appLockManager.lockType = .pin
+            appLockManager.pin = pin1
         } else {
-            appLockManager.pattern = firstPattern
+            guard recordedPattern.count >= 4 else {
+                HapticManager.shared.notification(.error)
+                showLocalToast("Vui lòng vẽ hình mẫu khóa (ít nhất 4 điểm)!")
+                return
+            }
+            appLockManager.lockType = .pattern
+            appLockManager.pattern = recordedPattern
         }
-        appLockManager.securityQuestion = questionInput
-        appLockManager.securityAnswer = answerInput
+        
+        appLockManager.securityQuestion = selectedQuestion
+        appLockManager.securityAnswer = trimmedAnswer
         appLockManager.isFirstLaunch = false
+        appLockManager.isAppUnlocked = true
         appLockManager.saveSettings()
         
         HapticManager.shared.notification(.success)
+        appLockManager.showToast("Thiết lập bảo mật thành công!")
         onFinish()
     }
 }

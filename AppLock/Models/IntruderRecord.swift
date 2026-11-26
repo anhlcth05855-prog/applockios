@@ -23,8 +23,7 @@ public struct IntruderRecord: Identifiable, Codable {
     
     public var formattedTime: String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.dateFormat = "HH:mm - dd/MM/yyyy"
         formatter.locale = Locale(identifier: "vi_VN")
         return formatter.string(from: timestamp)
     }
