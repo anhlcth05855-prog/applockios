@@ -1,110 +1,95 @@
 import SwiftUI
 
-/// Lock Screen matching 00:43 - 00:52 & 01:06 - 01:09 in the reference video
+/// Unlock screen matching 00:34 in the reference video ("Mở khóa bằng mã")
 public struct LockScreenOverlayView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     
     @State private var enteredPin: String = ""
-    @State private var selectedPattern: [Int] = []
-    @State private var patternState: PatternState = .normal
     @State private var shakeAttempts: CGFloat = 0
-    @State private var errorToast: String? = nil
+    @State private var errorMessage: String? = nil
     @State private var showForgotSheet: Bool = false
-    
     @State private var recoveryAnswerInput: String = ""
     @State private var recoveryError: String? = nil
     
     public init() {}
     
     public var body: some View {
-        ZStack(alignment: .bottom) {
-            AppColors.background.ignoresSafeArea()
+        ZStack {
+            Color.white.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                Spacer().frame(height: 44)
-                
-                // Top Target App Icon + Title + Prompt matching video (00:43 - 00:52)
-                VStack(spacing: 10) {
-                    if let target = appLockManager.currentLockedAppTarget, !target.isEmpty {
-                        AppBrandIconView(appName: target, size: 68)
-                        
-                        Text(target)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(AppColors.textPrimary)
-                            .padding(.top, 2)
-                    } else {
-                        Image(systemName: "checkmark.shield.fill")
-                            .font(.system(size: 62, weight: .semibold))
-                            .foregroundColor(AppColors.cyan)
-                        
-                        Text("Được bảo vệ bởi AppLock")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(AppColors.textPrimary)
-                            .padding(.top, 2)
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showForgotSheet = true
+                    }) {
+                        Text("Quên mật khẩu?")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.textSecondary)
                     }
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 14)
+                
+                Spacer().frame(height: 28)
+                
+                // App / Shield icon matching 00:34
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "4F6DF5"), Color(hex: "8B5CF6")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                        .shadow(color: AppColors.cyan.opacity(0.25), radius: 8, y: 4)
                     
-                    Text(appLockManager.lockType == .pin ? "Nhập mã PIN bảo mật" : "Vẽ hình mở khóa")
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
+                Text("Mở khóa bằng mã")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .padding(.top, 16)
+                
+                if let err = errorMessage {
+                    Text(err)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.coral)
+                        .padding(.top, 8)
+                }
+                
+                Spacer()
+                
+                PinPadView(
+                    enteredPin: $enteredPin,
+                    maxDigits: 6,
+                    shakeAttempts: shakeAttempts,
+                    showBiometricButton: appLockManager.isBiometricEnabled,
+                    onBiometricTap: triggerBiometrics,
+                    onComplete: verifyPinCode
+                )
+                
+                Spacer()
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.shield.fill")
                         .font(.system(size: 14))
+                        .foregroundColor(AppColors.emerald)
+                    Text("Bảo vệ bởi Thời gian sử dụng iOS")
+                        .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                 }
-                
-                Spacer()
-                
-                // PIN Keypad or Pattern Matrix
-                if appLockManager.lockType == .pin {
-                    PinPadView(
-                        enteredPin: $enteredPin,
-                        shakeAttempts: shakeAttempts,
-                        showBiometricButton: appLockManager.isBiometricEnabled,
-                        onBiometricTap: triggerBiometrics,
-                        onComplete: verifyPinCode
-                    )
-                } else {
-                    VStack(spacing: 20) {
-                        PatternLockView(
-                            selectedIndices: $selectedPattern,
-                            state: patternState,
-                            onComplete: verifyPatternCode
-                        )
-                        
-                        if appLockManager.isBiometricEnabled {
-                            Button(action: triggerBiometrics) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: BiometricManager.shared.getAvailableBiometricType().iconName)
-                                    Text("Mở khóa nhanh bằng \(BiometricManager.shared.getAvailableBiometricType().title)")
-                                }
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(AppColors.cyan)
-                            }
-                        }
-                    }
-                }
-                
-                Spacer()
-                
-                // Bottom "Quên mật khẩu?" link matching video (00:50)
-                Button(action: {
-                    showForgotSheet = true
-                }) {
-                    Text("Quên mật khẩu?")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.cyan)
-                }
-                .padding(.bottom, 28)
-            }
-            
-            // Toast Pill near bottom on wrong attempt ("Mã PIN không chính xác (1 lần sai)")
-            if let toast = errorToast {
-                ToastBannerView(message: toast)
-                    .padding(.bottom, 58)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.bottom, 22)
             }
         }
         .onAppear {
             enteredPin = ""
-            selectedPattern = []
-            patternState = .normal
-            errorToast = nil
+            errorMessage = nil
             if appLockManager.isBiometricEnabled {
                 triggerBiometrics()
             }
@@ -114,53 +99,30 @@ public struct LockScreenOverlayView: View {
         }
     }
     
-    private func showErrorToast(_ text: String) {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-            errorToast = text
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation {
-                if errorToast == text {
-                    errorToast = nil
-                }
-            }
-        }
-    }
-    
     private var recoverySheetView: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
-            
+        NavigationView {
             VStack(spacing: 20) {
-                HStack {
-                    Text("Khôi phục mật khẩu")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer()
-                    Button("Đóng") { showForgotSheet = false }
-                        .foregroundColor(AppColors.cyan)
-                }
-                .padding(.top, 24)
-                
-                Text("Trả lời câu hỏi bảo mật để mở khóa ngay:")
+                Text("Trả lời câu hỏi bảo mật để đặt lại quyền truy cập:")
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(appLockManager.securityQuestion)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(AppColors.cyan)
-                        
-                        Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                        
-                        TextField("Nhập câu trả lời của bạn...", text: $recoveryAnswerInput)
-                            .padding(.vertical, 8)
-                            .foregroundColor(AppColors.textPrimary)
-                    }
-                    .padding(16)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(appLockManager.securityQuestion)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(AppColors.cyan)
+                    
+                    TextField("Nhập câu trả lời của bạn...", text: $recoveryAnswerInput)
+                        .padding(12)
+                        .background(AppColors.inputBackground)
+                        .cornerRadius(10)
                 }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white)
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(AppColors.cardBorder, lineWidth: 1))
+                )
                 
                 if let err = recoveryError {
                     Text(err)
@@ -171,7 +133,7 @@ public struct LockScreenOverlayView: View {
                 Button(action: verifyRecoveryAnswer) {
                     Text("Xác thực & Mở khóa")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(AppColors.background)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(Capsule().fill(AppColors.cyan))
@@ -179,7 +141,15 @@ public struct LockScreenOverlayView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 20)
+            .padding(20)
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle("Khôi phục mật khẩu")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Đóng") { showForgotSheet = false }
+                }
+            }
         }
     }
     
@@ -194,9 +164,9 @@ public struct LockScreenOverlayView: View {
         }
     }
     
-    private func verifyPinCode(_ pin: String) {
-        if appLockManager.verifyPIN(pin) {
-            errorToast = nil
+    private func verifyPinCode(_ code: String) {
+        if appLockManager.verifyPIN(code) {
+            errorMessage = nil
             enteredPin = ""
             appLockManager.handleSuccessfulUnlock()
         } else {
@@ -204,36 +174,14 @@ public struct LockScreenOverlayView: View {
                 shakeAttempts += 1
             }
             enteredPin = ""
-            let target = appLockManager.currentLockedAppTarget ?? "AppLock"
-            appLockManager.handleFailedAttempt(targetApp: target)
-            showErrorToast("Mã PIN không chính xác (\(appLockManager.failedAttemptsCount) lần sai)")
-        }
-    }
-    
-    private func verifyPatternCode(_ pattern: [Int]) {
-        if appLockManager.verifyPattern(pattern) {
-            patternState = .success
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                appLockManager.handleSuccessfulUnlock()
-                selectedPattern = []
-                patternState = .normal
-            }
-        } else {
-            patternState = .error
-            let target = appLockManager.currentLockedAppTarget ?? "AppLock"
-            appLockManager.handleFailedAttempt(targetApp: target)
-            showErrorToast("Hình vẽ không chính xác (\(appLockManager.failedAttemptsCount) lần sai)")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                selectedPattern = []
-                patternState = .normal
-            }
+            appLockManager.handleFailedAttempt()
+            errorMessage = "Mã PIN không chính xác (\(appLockManager.failedAttemptsCount) lần sai)"
         }
     }
     
     private func triggerBiometrics() {
-        let targetText = appLockManager.currentLockedAppTarget.map { "Đang khóa: \($0)" } ?? "Xác thực để mở khóa AppLock"
         Task {
-            let result = await BiometricManager.shared.authenticate(reason: targetText)
+            let result = await BiometricManager.shared.authenticate(reason: "Mở khóa ứng dụng bảo vệ")
             if case .success(true) = result {
                 await MainActor.run {
                     appLockManager.handleSuccessfulUnlock()

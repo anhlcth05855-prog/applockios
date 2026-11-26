@@ -8,7 +8,7 @@ public enum TabItem: Int, CaseIterable {
     
     var title: String {
         switch self {
-        case .appLock: return "Khóa ứng dụng"
+        case .appLock: return "Khoá App"
         case .vault: return "Két riêng tư"
         case .intruder: return "Kẻ xâm nhập"
         case .settings: return "Cài đặt"
@@ -17,8 +17,8 @@ public enum TabItem: Int, CaseIterable {
     
     var iconName: String {
         switch self {
-        case .appLock: return "square.grid.2x2.fill"
-        case .vault: return "camera.viewfinder"
+        case .appLock: return "lock.shield.fill"
+        case .vault: return "photo.on.rectangle.angled"
         case .intruder: return "person.crop.circle"
         case .settings: return "gearshape.fill"
         }
@@ -28,23 +28,14 @@ public enum TabItem: Int, CaseIterable {
 public struct MainTabView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     @State private var selectedTab: TabItem = .appLock
-    @State private var showPermissionGuideSheet: Bool = false
     
     public init() {}
-    
-    private var lockedCount: Int {
-        appLockManager.apps.filter { $0.isLocked }.count
-    }
     
     public var body: some View {
         ZStack(alignment: .bottom) {
             AppColors.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Persistent Top App Bar matching video (AppLock / Guard Private Protection / X ĐÃ KHÓA)
-                topAppBar
-                
-                // Main Content Area
                 ZStack {
                     switch selectedTab {
                     case .appLock:
@@ -59,90 +50,30 @@ public struct MainTabView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                // Solid Bottom Navigation Bar matching video
+                // Bottom Navigation Bar matching video
                 bottomNavBar
             }
             
-            // Floating Toast Pill above bottom nav
             if let toast = appLockManager.toastMessage {
                 ToastBannerView(message: toast)
-                    .padding(.bottom, 78)
+                    .padding(.bottom, 76)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(10)
             }
             
-            // Guaranteed Root Lock / Setup Overlay (never blocked by open .sheet modals)
-            if appLockManager.isShowingLockOverlay {
-                Group {
-                    if appLockManager.isFirstLaunch {
-                        SecuritySetupFlowView {
-                            appLockManager.isShowingLockOverlay = false
-                            if !appLockManager.isAutomationVerified {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                    showPermissionGuideSheet = true
-                                }
-                            }
-                        }
-                    } else {
-                        LockScreenOverlayView()
-                    }
-                }
-                .transition(.opacity)
-                .zIndex(100)
+            // Root Passcode Lock Overlay
+            if appLockManager.isShowingLockOverlay && !appLockManager.isFirstLaunch {
+                LockScreenOverlayView()
+                    .transition(.opacity)
+                    .zIndex(100)
             }
         }
-        .onChange(of: appLockManager.modalDismissToken) { _ in
-            showPermissionGuideSheet = false
-        }
-        .sheet(isPresented: $showPermissionGuideSheet) {
-            PermissionStatusView()
-        }
-    }
-    
-    private var topAppBar: some View {
-        HStack(spacing: 12) {
-            // Cyan Shield Checkmark Icon
-            Image(systemName: "checkmark.shield.fill")
-                .font(.system(size: 32, weight: .semibold))
-                .foregroundColor(AppColors.cyan)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("AppLock")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Text("Guard Private Protection")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppColors.cyan)
-            }
-            
-            Spacer()
-            
-            // Cyan Capsule Status Badge ("3 ĐÃ KHÓA")
-            Button(action: {
-                showPermissionGuideSheet = true
-            }) {
-                Text("\(lockedCount) ĐÃ KHÓA")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(AppColors.background)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.cyan)
-                    )
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 14)
-        .background(AppColors.backgroundSecondary)
     }
     
     private var bottomNavBar: some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(AppColors.cardBorder.opacity(0.6))
+                .fill(AppColors.cardBorder)
                 .frame(height: 1)
             
             HStack(spacing: 0) {
@@ -170,8 +101,8 @@ public struct MainTabView: View {
                     }
                 }
             }
-            .background(AppColors.backgroundSecondary)
+            .background(Color.white)
         }
-        .background(AppColors.backgroundSecondary.ignoresSafeArea(edges: .bottom))
+        .background(Color.white.ignoresSafeArea(edges: .bottom))
     }
 }

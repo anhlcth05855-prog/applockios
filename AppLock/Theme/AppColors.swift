@@ -1,27 +1,30 @@
 import SwiftUI
 
 public enum AppColors {
-    public static let background = Color(hex: "0A0F1D")
-    public static let backgroundSecondary = Color(hex: "131B2E")
-    public static let cardBackground = Color(hex: "1A243D")
-    public static let cardHighlight = Color(hex: "223050")
-    public static let inputBackground = Color(hex: "152037")
-    public static let cardBorder = Color(hex: "2E3D60")
-    public static let keypadNormal = Color(hex: "1D2A48")
-    public static let keypadPressed = Color(hex: "2E3F6B")
+    // Light modern palette matching reference video
+    public static let background = Color(hex: "F8FAFC")
+    public static let backgroundSecondary = Color(hex: "FFFFFF")
+    public static let cardBackground = Color(hex: "FFFFFF")
+    public static let cardHighlight = Color(hex: "EEF2FF")
+    public static let inputBackground = Color(hex: "F1F5F9")
+    public static let cardBorder = Color(hex: "E2E8F0")
+    public static let keypadNormal = Color(hex: "F1F5F9")
+    public static let keypadPressed = Color(hex: "4B5563")
     
-    // Accents
-    public static let cyan = Color(hex: "00E5FF")
-    public static let emerald = Color(hex: "00E676")
-    public static let coral = Color(hex: "FF3B30")
-    public static let amber = Color(hex: "FFB300")
-    public static let purple = Color(hex: "6C5CE7")
+    // Brand Accents
+    public static let cyan = Color(hex: "1D6FF2")       // Primary Blue (#1D6FF2)
+    public static let purple = Color(hex: "7C3AED")     // Purple gradient accent
+    public static let pink = Color(hex: "EC4899")
+    public static let yellowCard = Color(hex: "FFE100") // "Chế độ riêng tư" highlight
+    public static let emerald = Color(hex: "10B981")
+    public static let coral = Color(hex: "EF4444")
+    public static let amber = Color(hex: "F59E0B")
     
     // Text
-    public static let textPrimary = Color.white
-    public static let textSecondary = Color(hex: "94A3B8")
-    public static let textMuted = Color(hex: "64748B")
-    public static let textHint = Color(hex: "475569")
+    public static let textPrimary = Color(hex: "0F172A")
+    public static let textSecondary = Color(hex: "64748B")
+    public static let textMuted = Color(hex: "94A3B8")
+    public static let textHint = Color(hex: "CBD5E1")
 }
 
 extension Color {

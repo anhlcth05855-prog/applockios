@@ -1,316 +1,271 @@
 import SwiftUI
-#if canImport(FamilyControls)
-import FamilyControls
-#endif
 
+/// Home Modes Screen matching 00:01 - 00:02 in the reference video
 public struct AppLockListView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     @ObservedObject var screenTimeManager = ScreenTimeManager.shared
     
-    @State private var searchText: String = ""
-    @State private var selectedFilter: AppFilter = .all
-    @State private var showShortcutsGuide: Bool = false
-    @State private var guideInitialApp: String = "Facebook"
-    @State private var showFamilyPicker: Bool = false
-    @State private var showAddAppSheet: Bool = false
-    @State private var customAppNameInput: String = ""
-    @State private var customAppSchemeInput: String = ""
-    
-    enum AppFilter: String, CaseIterable {
-        case all = "Tất cả"
-        case locked = "Đã khóa"
-        case recommended = "Khuyên dùng"
-        case system = "Hệ thống"
-    }
+    @State private var selectedModeId: String? = nil
+    @State private var showSetupSheet: Bool = false
+    @State private var showPermissionSheet: Bool = false
     
     public init() {}
     
-    var isSystemProtectionActive: Bool {
-        appLockManager.isAutomationVerified || (screenTimeManager.isAuthorized && screenTimeManager.shieldedCount > 0)
-    }
-    
-    var filteredApps: [AppItem] {
-        var list = appLockManager.apps
-        
-        switch selectedFilter {
-        case .all:
-            break
-        case .locked:
-            list = list.filter { $0.isLocked }
-        case .recommended:
-            list = list.filter { $0.isRecommended }
-        case .system:
-            list = list.filter { $0.isSystemApp }
-        }
-        
-        if !searchText.isEmpty {
-            list = list.filter {
-                $0.appName.localizedCaseInsensitiveContains(searchText) ||
-                $0.bundleId.localizedCaseInsensitiveContains(searchText) ||
-                $0.category.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-        
-        return list
-    }
-    
-    var lockedCount: Int {
-        appLockManager.apps.filter { $0.isLocked }.count
-    }
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
     
     public var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Search Bar matching video (48pt height, #152037)
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 16))
-                        .foregroundColor(AppColors.textMuted)
-                    
-                    TextField("Tìm kiếm ứng dụng...", text: $searchText)
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.textPrimary)
-                    
-                    if !searchText.isEmpty {
-                        Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    } else {
-                        Button(action: { showAddAppSheet = true }) {
-                            Image(systemName: "plus.circle")
-                                .font(.system(size: 17))
-                                .foregroundColor(AppColors.cyan.opacity(0.85))
-                        }
-                    }
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 46)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(AppColors.inputBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(AppColors.cardBorder, lineWidth: 1)
-                        )
-                )
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                
-                // Horizontal Filter Chips (Tất cả | Đã khóa | Khuyên dùng | Hệ thống)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(AppFilter.allCases, id: \.self) { filter in
-                            let isSelected = selectedFilter == filter
-                            
-                            Button(action: {
-                                selectedFilter = filter
-                                if appLockManager.isVibrationEnabled {
-                                    HapticManager.shared.selection()
-                                }
-                            }) {
-                                Text(filter.rawValue)
-                                    .font(.system(size: 12.5, weight: isSelected ? .bold : .medium))
-                                    .padding(.horizontal, 16)
-                                    .frame(height: 32)
-                                    .background(
-                                        Capsule()
-                                            .fill(isSelected ? AppColors.cyan : AppColors.cardBackground)
-                                    )
-                                    .foregroundColor(isSelected ? AppColors.background : AppColors.textSecondary)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(isSelected ? AppColors.cyan : AppColors.cardBorder, lineWidth: 1)
-                                    )
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-                }
-                
-                // Summary & Quick Action Bar ("Tổng: XX ứng dụng (Y đã bảo vệ)" | "Khóa toàn bộ đề xuất")
-                HStack {
-                    Text("Tổng: \(appLockManager.apps.count) ứng dụng (\(lockedCount) đã bảo vệ)")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.textMuted)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        appLockManager.lockAllRecommended()
-                        appLockManager.showToast("Đã khóa toàn bộ ứng dụng nhạy cảm!")
-                    }) {
-                        Text("Khóa toàn bộ đề xuất")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(AppColors.cyan)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                
-                // Compact iOS Activation Bar (if Shortcuts / Screen Time not yet linked)
-                if !isSystemProtectionActive {
-                    Button(action: {
-                        guideInitialApp = "Facebook"
-                        showShortcutsGuide = true
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "bolt.shield.fill")
-                                .foregroundColor(AppColors.amber)
-                            Text("Chạm để cấp quyền tự động chặn ứng dụng trên iOS")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(AppColors.textPrimary)
-                                .lineLimit(1)
-                            Spacer()
-                            Text("Bật ngay")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(AppColors.background)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Capsule().fill(AppColors.cyan))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(AppColors.cardHighlight)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(AppColors.cyan.opacity(0.4), lineWidth: 1)
-                                )
-                        )
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 6)
-                } else if appLockManager.isWithinGracePeriod {
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.open.rotation")
-                            .foregroundColor(AppColors.emerald)
-                        Text("Đang tạm mở khóa phiên dùng ứng dụng")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppColors.textSecondary)
+                // Return to unlocked app banner (matching 00:35)
+                if screenTimeManager.showReturnToAppBanner {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.up.left")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Nhấn vào góc trên bên trái để quay lại ứng dụng đã mở khóa")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white)
                         Spacer()
                         Button("Khóa lại") {
-                            appLockManager.relockExternalAppsNow()
+                            screenTimeManager.relockShieldsNow()
+                            appLockManager.showToast("Đã bật lại khiên khóa!")
                         }
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(AppColors.cyan)
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundColor(AppColors.yellowCard)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 4)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "0F172A"))
                 }
                 
-                // Apps List
-                if filteredApps.isEmpty {
-                    Spacer()
-                    Text("Không tìm thấy ứng dụng phù hợp")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.textMuted)
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(filteredApps) { app in
-                                AppRowView(
-                                    app: app,
-                                    onToggle: {
-                                        let locked = appLockManager.toggleAppLock(id: app.id)
-                                        appLockManager.showToast(locked ? "Đã khóa bảo vệ \(app.appName)" : "Đã mở khóa \(app.appName)")
-                                    },
-                                    onTestLock: {
-                                        appLockManager.currentLockedAppTarget = app.appName
-                                        appLockManager.isExternalIntercept = false
-                                        appLockManager.isAppUnlocked = false
-                                        appLockManager.isShowingLockOverlay = true
-                                    },
-                                    onOpenGuide: {
-                                        guideInitialApp = app.appName
-                                        showShortcutsGuide = true
-                                    }
+                // Top Header ("Khoá App" + +PLUS badge) matching 00:01
+                HStack(spacing: 8) {
+                    Text("Khoá App")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                    
+                    Text("+PLUS")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(hex: "4F6DF5"), Color(hex: "A855F7")],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
                                 )
+                        )
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        showPermissionSheet = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 34, height: 34)
+                                .shadow(color: Color.black.opacity(0.06), radius: 4, y: 2)
+                            Image(systemName: screenTimeManager.isAuthorized ? "checkmark.shield.fill" : "book.fill")
+                                .font(.system(size: 15))
+                                .foregroundColor(screenTimeManager.isAuthorized ? AppColors.emerald : AppColors.textPrimary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Hero Illustration Card matching 00:01
+                        VStack(spacing: 10) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(hex: "EEF2FF"), Color(hex: "F5F3FF")],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 140, height: 96)
+                                
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.system(size: 46))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [AppColors.cyan, AppColors.purple],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            .padding(.top, 6)
+                            
+                            Text("Chọn chế độ")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(AppColors.textPrimary)
+                            
+                            Text(screenTimeManager.totalProtectedAppsCount > 0
+                                 ? "Đang khóa bảo vệ \(screenTimeManager.totalProtectedAppsCount) mục qua Thời gian sử dụng"
+                                 : "Bắt đầu khóa ứng dụng!")
+                                .font(.system(size: 13))
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                        .padding(.bottom, 4)
+                        
+                        // Tooltip Callout matching 00:01
+                        if appLockManager.isFirstLaunch || !screenTimeManager.isAuthorized {
+                            Text("Nhấp để bắt đầu khóa ứng dụng")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(AppColors.textPrimary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 9)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
+                                )
+                        }
+                        
+                        // 2x2 Modes Grid matching 00:01 - 00:02
+                        LazyVGrid(columns: gridColumns, spacing: 12) {
+                            ForEach(screenTimeManager.modes) { mode in
+                                modeCard(mode)
                             }
                         }
                         .padding(.horizontal, 16)
-                        .padding(.top, 2)
-                        .padding(.bottom, 18)
+                        .padding(.bottom, 24)
                     }
                 }
             }
         }
         .onChange(of: appLockManager.modalDismissToken) { _ in
-            showShortcutsGuide = false
-            showAddAppSheet = false
-            showFamilyPicker = false
+            showSetupSheet = false
+            showPermissionSheet = false
         }
-        .sheet(isPresented: $showShortcutsGuide) {
-            ShortcutsGuideView(initialAppName: guideInitialApp)
+        .fullScreenCover(isPresented: $showSetupSheet) {
+            SecuritySetupFlowView {
+                showSetupSheet = false
+                selectedModeId = "privacy"
+            }
         }
-        .sheet(isPresented: $showAddAppSheet) {
-            addCustomAppSheet
+        .sheet(isPresented: $showPermissionSheet) {
+            ScreenTimePermissionView()
         }
-        #if canImport(FamilyControls)
-        .familyActivityPicker(isPresented: $showFamilyPicker, selection: $screenTimeManager.activitySelection)
-        #endif
+        .fullScreenCover(item: Binding(
+            get: { selectedModeId.map { ModeNavTarget(id: $0) } },
+            set: { selectedModeId = $0?.id }
+        )) { target in
+            ModeDetailView(modeId: target.id)
+        }
     }
     
-    private var addCustomAppSheet: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
-            VStack(spacing: 18) {
-                HStack {
-                    Text("Thêm ứng dụng vào danh sách")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer()
-                    Button("Đóng") { showAddAppSheet = false }
-                        .foregroundColor(AppColors.cyan)
-                }
-                .padding(.top, 20)
-                
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Tên ứng dụng:")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppColors.cyan)
-                        TextField("Ví dụ: VNeID, Liên Quân, CapCut...", text: $customAppNameInput)
-                            .foregroundColor(AppColors.textPrimary)
-                            .padding(10)
-                            .background(AppColors.inputBackground)
-                            .cornerRadius(8)
-                        
-                        Text("URL Scheme tự mở lại (không bắt buộc):")
-                            .font(.system(size: 12))
-                            .foregroundColor(AppColors.textSecondary)
-                        TextField("Ví dụ: fb://, youtube://", text: $customAppSchemeInput)
-                            .foregroundColor(AppColors.textPrimary)
-                            .autocapitalization(.none)
-                            .padding(10)
-                            .background(AppColors.inputBackground)
-                            .cornerRadius(8)
-                    }
-                    .padding(16)
-                }
-                
-                Button(action: {
-                    appLockManager.addCustomApp(name: customAppNameInput, urlScheme: customAppSchemeInput)
-                    appLockManager.showToast("Đã thêm & khóa \(customAppNameInput)!")
-                    customAppNameInput = ""
-                    customAppSchemeInput = ""
-                    showAddAppSheet = false
-                }) {
-                    Text("Lưu & Khóa ứng dụng")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(CyberButtonStyle(primaryColor: AppColors.cyan))
-                .disabled(customAppNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                
-                Spacer()
+    @ViewBuilder
+    private func modeCard(_ mode: LockModeItem) -> some View {
+        let isYellow = mode.isHighlighted
+        let bgColor: Color = {
+            if isYellow { return AppColors.yellowCard }
+            switch mode.id {
+            case "work": return Color(hex: "F1F5F9")
+            case "teen": return Color(hex: "EDE9FE")
+            default: return Color(hex: "FFFFFF")
             }
-            .padding(.horizontal, 20)
+        }()
+        
+        Button(action: {
+            if appLockManager.isFirstLaunch {
+                showSetupSheet = true
+            } else if !screenTimeManager.isAuthorized {
+                showPermissionSheet = true
+            } else {
+                selectedModeId = mode.id
+            }
+        }) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(isYellow ? Color.white.opacity(0.65) : Color.white)
+                            .frame(width: 36, height: 36)
+                        Image(systemName: mode.iconName)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(isYellow ? AppColors.textPrimary : AppColors.cyan)
+                    }
+                    Spacer()
+                }
+                
+                Text(mode.title)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                
+                Spacer(minLength: 4)
+                
+                HStack {
+                    Spacer()
+                    // Pill Switch inside card
+                    Button(action: {
+                        if appLockManager.isFirstLaunch {
+                            showSetupSheet = true
+                        } else if !screenTimeManager.isAuthorized {
+                            showPermissionSheet = true
+                        } else {
+                            var updated = mode
+                            updated.isEnabled.toggle()
+                            screenTimeManager.updateMode(updated)
+                            HapticManager.shared.selection()
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            if mode.isEnabled {
+                                Text("ON")
+                                    .font(.system(size: 10.5, weight: .heavy))
+                                    .foregroundColor(.white)
+                                Circle().fill(Color.white).frame(width: 18, height: 18)
+                            } else {
+                                Circle().fill(Color.white).frame(width: 18, height: 18)
+                                Text("OFF")
+                                    .font(.system(size: 10.5, weight: .heavy))
+                                    .foregroundColor(isYellow ? AppColors.textSecondary : .white)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        .frame(width: 56, height: 26)
+                        .background(
+                            Capsule()
+                                .fill(mode.isEnabled ? AppColors.cyan : (isYellow ? Color.white.opacity(0.85) : Color(hex: "CBD5E1")))
+                        )
+                    }
+                }
+            }
+            .padding(16)
+            .frame(height: 168)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(bgColor)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8, y: 3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isYellow ? Color(hex: "FACC15") : AppColors.cardBorder, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
+}
+
+private struct ModeNavTarget: Identifiable {
+    let id: String
 }

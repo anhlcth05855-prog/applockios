@@ -1,13 +1,32 @@
 import SwiftUI
+import UserNotifications
+
+final class AppNotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        Task { @MainActor in
+            AppLockManager.shared.triggerUnlockFromNotification()
+        }
+        completionHandler()
+    }
+}
 
 @main
 struct AppLockApp: App {
+    @UIApplicationDelegateAdaptor(AppNotificationDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var appLockManager = AppLockManager.shared
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
     init() {
-        // Configure standard navigation and tab bar appearance
         configureAppearance()
     }
     
@@ -16,10 +35,7 @@ struct AppLockApp: App {
             MainTabView()
                 .environmentObject(appLockManager)
                 .environmentObject(screenTimeManager)
-                .preferredColorScheme(.dark)
-                .onOpenURL { url in
-                    appLockManager.handleDeepLink(url: url)
-                }
+                .preferredColorScheme(.light)
                 .onChange(of: scenePhase) { newPhase in
                     switch newPhase {
                     case .background:
@@ -34,17 +50,14 @@ struct AppLockApp: App {
     }
     
     private func configureAppearance() {
-        // Navigation bar dark tint
         let navBarAppearance = UINavigationBarAppearance()
         navBarAppearance.configureWithOpaqueBackground()
-        navBarAppearance.backgroundColor = UIColor(AppColors.background)
-        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        navBarAppearance.backgroundColor = UIColor.white
+        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor(AppColors.textPrimary)]
+        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor(AppColors.textPrimary)]
         
         UINavigationBar.appearance().standardAppearance = navBarAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
-        
-        // Hide default UITabBar background since custom floating bar is used
         UITabBar.appearance().isHidden = true
     }
 }

@@ -1,16 +1,12 @@
 import SwiftUI
 import AVFoundation
-#if canImport(FamilyControls)
-import FamilyControls
-#endif
 
 public struct SettingsView: View {
     @ObservedObject var appLockManager = AppLockManager.shared
     @ObservedObject var screenTimeManager = ScreenTimeManager.shared
     
     @State private var showingChangePasscode = false
-    @State private var showingShortcutsGuide = false
-    @State private var showingFamilyPicker = false
+    @State private var showingScreenTimeSheet = false
     @State private var cameraAuthorized = false
     
     public init() {}
@@ -20,196 +16,132 @@ public struct SettingsView: View {
             AppColors.background.ignoresSafeArea()
             
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // 1. Phương thức khóa (matching 00:19 in video)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Phương thức khóa")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppColors.cyan)
-                        
-                        VStack(spacing: 14) {
-                            Button(action: {
-                                appLockManager.lockType = (appLockManager.lockType == .pin ? .pattern : .pin)
-                                appLockManager.saveSettings()
-                                appLockManager.showToast("Đã chuyển sang \(appLockManager.lockType == .pin ? "Mã PIN" : "Hình vẽ mẫu")")
-                            }) {
-                                HStack {
-                                    Text("Loại khóa hiện tại")
-                                        .font(.system(size: 15))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Spacer()
-                                    Text(appLockManager.lockType == .pin ? "Mã PIN" : "Hình vẽ mẫu")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundColor(AppColors.cyan)
-                                }
-                            }
-                            
-                            Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                            
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Cài đặt")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.top, 8)
+                    
+                    // 1. Bảo mật & Mật khẩu
+                    sectionHeader("Bảo mật & Mật khẩu")
+                    VStack(spacing: 14) {
+                        Button(action: { showingChangePasscode = true }) {
                             HStack {
-                                Text("Mở khóa bằng vân tay / khuôn mặt")
-                                    .font(.system(size: 15))
+                                Image(systemName: "key.fill")
+                                    .foregroundColor(AppColors.cyan)
+                                Text("Đổi mật khẩu 6 số")
+                                    .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(AppColors.textPrimary)
                                 Spacer()
-                                Toggle("", isOn: $appLockManager.isBiometricEnabled)
-                                    .labelsHidden()
-                                    .tint(AppColors.cyan)
-                                    .onChange(of: appLockManager.isBiometricEnabled) { _ in
-                                        appLockManager.saveSettings()
-                                    }
-                            }
-                            
-                            Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                            
-                            Button(action: {
-                                showingChangePasscode = true
-                            }) {
-                                Text(appLockManager.lockType == .pin ? "Đổi mã PIN" : "Đổi hình vẽ")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(AppColors.cyan)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                                    .background(
-                                        Capsule()
-                                            .stroke(AppColors.cardBorder, lineWidth: 1.5)
-                                    )
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppColors.textMuted)
                             }
                         }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(AppColors.cardBackground)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                                )
-                        )
-                    }
-                    
-                    // 2. Quyền hệ thống (Interactive rows matching 00:19)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Quyền hệ thống")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppColors.cyan)
                         
-                        VStack(spacing: 14) {
-                            Button(action: { showingShortcutsGuide = true }) {
-                                HStack {
-                                    Text("Tự động chặn ứng dụng (Khuyên dùng)")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Spacer()
-                                    Text(appLockManager.isAutomationVerified ? "Đã cấp quyền" : "Cấp quyền")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(appLockManager.isAutomationVerified ? AppColors.emerald : AppColors.amber)
-                                }
-                            }
-                            
-                            Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                            
-                            Button(action: {
-                                Task {
-                                    let ok = await screenTimeManager.requestAuthorization()
-                                    if ok {
-                                        showingFamilyPicker = true
-                                    } else {
-                                        showingShortcutsGuide = true
-                                    }
-                                }
-                            }) {
-                                HStack {
-                                    Text("Hiển thị khiên khóa (Screen Time)")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Spacer()
-                                    Text(screenTimeManager.isAuthorized ? "Đã cấp quyền" : "Thiết lập")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(screenTimeManager.isAuthorized ? AppColors.emerald : AppColors.cyan)
-                                }
-                            }
-                            
-                            Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                            
-                            Button(action: {
-                                Task {
-                                    let granted = await CameraManager.shared.requestCameraPermission()
-                                    await MainActor.run {
-                                        cameraAuthorized = granted
-                                        if !granted, let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                                            UIApplication.shared.open(settingsUrl)
-                                        }
-                                    }
-                                }
-                            }) {
-                                HStack {
-                                    Text("Quyền máy ảnh (Chụp kẻ gian)")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Spacer()
-                                    Text(cameraAuthorized ? "Đã cấp quyền" : "Cấp quyền")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(cameraAuthorized ? AppColors.emerald : AppColors.amber)
-                                }
-                            }
-                        }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(AppColors.cardBackground)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                                )
-                        )
-                    }
-                    
-                    // 3. Thời gian khóa lại (Radio buttons matching 00:19)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Thời gian khóa lại")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppColors.cyan)
+                        Divider()
                         
-                        VStack(alignment: .leading, spacing: 14) {
-                            radioRow(policy: .screenOff, label: "Khóa khi tắt màn hình")
-                            radioRow(policy: .immediately, label: "Khóa ngay khi thoát ứng dụng")
-                            radioRow(policy: .oneMinute, label: "Sau 1 phút")
-                            
-                            Rectangle().fill(AppColors.cardBorder).frame(height: 1)
-                            
-                            HStack {
-                                Text("Phiên mở khóa ứng dụng ngoài:")
-                                    .font(.system(size: 13.5))
-                                    .foregroundColor(AppColors.textSecondary)
-                                Spacer()
-                                Picker("", selection: $appLockManager.unlockGraceSeconds) {
-                                    Text("15 giây").tag(15)
-                                    Text("30 giây").tag(30)
-                                    Text("1 phút").tag(60)
-                                    Text("2 phút").tag(120)
-                                    Text("5 phút").tag(300)
-                                }
-                                .pickerStyle(.menu)
+                        HStack {
+                            Image(systemName: BiometricManager.shared.getAvailableBiometricType().iconName)
+                                .foregroundColor(AppColors.cyan)
+                            Text("Mở khóa bằng \(BiometricManager.shared.getAvailableBiometricType().title)")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
+                            Toggle("", isOn: $appLockManager.isBiometricEnabled)
+                                .labelsHidden()
                                 .tint(AppColors.cyan)
-                                .onChange(of: appLockManager.unlockGraceSeconds) { _ in
+                                .onChange(of: appLockManager.isBiometricEnabled) { _ in
                                     appLockManager.saveSettings()
                                 }
+                        }
+                    }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                    
+                    // 2. Quyền hệ thống iOS
+                    sectionHeader("Quyền hệ thống iOS")
+                    VStack(spacing: 14) {
+                        Button(action: { showingScreenTimeSheet = true }) {
+                            HStack {
+                                Image(systemName: "hourglass")
+                                    .foregroundColor(AppColors.cyan)
+                                Text("Thời gian sử dụng (Screen Time)")
+                                    .font(.system(size: 14.5, weight: .medium))
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                Text(screenTimeManager.isAuthorized ? "Đã cấp quyền" : "Cấp quyền")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(screenTimeManager.isAuthorized ? AppColors.emerald : AppColors.amber)
                             }
                         }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(AppColors.cardBackground)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                                )
-                        )
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            Task {
+                                let ok = await CameraManager.shared.requestCameraPermission()
+                                await MainActor.run {
+                                    cameraAuthorized = ok
+                                    if !ok, let url = URL(string: UIApplication.openSettingsURLString) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "camera.fill")
+                                    .foregroundColor(AppColors.cyan)
+                                Text("Máy ảnh (Chụp kẻ xâm nhập)")
+                                    .font(.system(size: 14.5, weight: .medium))
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                Text(cameraAuthorized ? "Đã cấp quyền" : "Cấp quyền")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(cameraAuthorized ? AppColors.emerald : AppColors.amber)
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            Task {
+                                await screenTimeManager.requestNotificationPermission()
+                                await MainActor.run {
+                                    appLockManager.showToast("Đã bật thông báo mở khóa nhanh!")
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "bell.badge.fill")
+                                    .foregroundColor(AppColors.cyan)
+                                Text("Thông báo Mở khóa")
+                                    .font(.system(size: 14.5, weight: .medium))
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                Text("Cho phép")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(AppColors.cyan)
+                            }
+                        }
                     }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
                     
-                    // 4. Rung khi bấm phím
+                    // 3. Thời gian khóa lại AppLock
+                    sectionHeader("Thời gian khóa lại")
+                    VStack(alignment: .leading, spacing: 14) {
+                        radioRow(policy: .immediately, label: "Khóa ngay khi thoát ứng dụng")
+                        radioRow(policy: .screenOff, label: "Khóa khi tắt màn hình")
+                        radioRow(policy: .oneMinute, label: "Sau 1 phút")
+                    }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                    
+                    // 4. Rung phản hồi
                     HStack {
                         Text("Rung khi bấm phím")
-                            .font(.system(size: 15))
+                            .font(.system(size: 15, weight: .medium))
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Toggle("", isOn: $appLockManager.isVibrationEnabled)
@@ -220,64 +152,48 @@ public struct SettingsView: View {
                             }
                     }
                     .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(AppColors.cardBackground)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(AppColors.cardBorder, lineWidth: 1)
-                            )
-                    )
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
                     
-                    // 5. About Card
-                    VStack(spacing: 5) {
-                        Text("AppLock - Lock & Guard Private")
+                    // 5. About
+                    VStack(spacing: 4) {
+                        Text("Khoá App - Guard Private Protection")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
-                        
-                        Text("Phiên bản 1.3.1 Pro Guard")
+                        Text("Phiên bản 2.0.0 • Native Screen Time API")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(AppColors.cyan)
-                        
-                        Text("Phát triển theo chuẩn bảo mật riêng tư cao cấp")
-                            .font(.system(size: 11))
-                            .foregroundColor(AppColors.textMuted)
-                            .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(AppColors.cardBackground)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(AppColors.cardBorder, lineWidth: 1)
-                            )
-                    )
+                    .padding(18)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
                     .padding(.bottom, 24)
                 }
-                .padding(16)
+                .padding(.horizontal, 16)
             }
         }
         .onChange(of: appLockManager.modalDismissToken) { _ in
             showingChangePasscode = false
-            showingShortcutsGuide = false
-            showingFamilyPicker = false
+            showingScreenTimeSheet = false
         }
         .onAppear {
             cameraAuthorized = (AVCaptureDevice.authorizationStatus(for: .video) == .authorized)
+            screenTimeManager.checkCurrentStatus()
         }
         .fullScreenCover(isPresented: $showingChangePasscode) {
             SecuritySetupFlowView(isChangingPasscode: true) {
                 showingChangePasscode = false
             }
         }
-        .sheet(isPresented: $showingShortcutsGuide) {
-            ShortcutsGuideView(initialAppName: "Facebook")
+        .sheet(isPresented: $showingScreenTimeSheet) {
+            ScreenTimePermissionView()
         }
-        #if canImport(FamilyControls)
-        .familyActivityPicker(isPresented: $showingFamilyPicker, selection: $screenTimeManager.activitySelection)
-        #endif
+    }
+    
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundColor(AppColors.textSecondary)
+            .padding(.leading, 4)
     }
     
     private func radioRow(policy: RelockPolicy, label: String) -> some View {
@@ -285,9 +201,7 @@ public struct SettingsView: View {
         return Button(action: {
             appLockManager.relockPolicy = policy
             appLockManager.saveSettings()
-            if appLockManager.isVibrationEnabled {
-                HapticManager.shared.selection()
-            }
+            HapticManager.shared.selection()
         }) {
             HStack(spacing: 12) {
                 ZStack {
@@ -300,11 +214,9 @@ public struct SettingsView: View {
                             .frame(width: 10, height: 10)
                     }
                 }
-                
                 Text(label)
                     .font(.system(size: 15))
                     .foregroundColor(AppColors.textPrimary)
-                
                 Spacer()
             }
         }
