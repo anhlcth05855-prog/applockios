@@ -142,6 +142,32 @@ public struct SettingsView: View {
                                     Divider().background(AppColors.cardBorder)
                                     
                                     HStack {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text("Phiên mở khóa app ngoài:")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(AppColors.textPrimary)
+                                            Text("Thời gian dùng Facebook/Zalo sau khi nhập PIN")
+                                                .font(.system(size: 11))
+                                                .foregroundColor(AppColors.textSecondary)
+                                        }
+                                        Spacer()
+                                        Picker("", selection: $appLockManager.unlockGraceSeconds) {
+                                            Text("30 giây").tag(30)
+                                            Text("1 phút").tag(60)
+                                            Text("2 phút").tag(120)
+                                            Text("5 phút").tag(300)
+                                            Text("15 phút").tag(900)
+                                        }
+                                        .pickerStyle(.menu)
+                                        .tint(AppColors.cyan)
+                                        .onChange(of: appLockManager.unlockGraceSeconds) { _ in
+                                            appLockManager.saveSettings()
+                                        }
+                                    }
+                                    
+                                    Divider().background(AppColors.cardBorder)
+                                    
+                                    HStack {
                                         Image(systemName: "iphone.radiowaves.left.and.right")
                                             .foregroundColor(AppColors.cyan)
                                         Text("Rung xúc giác (Haptic Feedback)")

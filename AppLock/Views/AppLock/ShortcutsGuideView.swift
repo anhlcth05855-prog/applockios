@@ -1,55 +1,18 @@
 import SwiftUI
 
 public struct ShortcutsGuideView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @ObservedObject var appLockManager = AppLockManager.shared
+    @Environment(\.dismiss) private var dismiss
     
-    struct GuideStep: Identifiable {
-        let id: Int
-        let title: String
-        let description: String
-        let iconName: String
-        let color: Color
+    @State private var selectedAppName: String
+    @State private var copiedName: Bool = false
+    
+    private let quickApps = ["Facebook", "Messenger", "Zalo", "Instagram", "TikTok", "Ảnh (Photos)"]
+    
+    public init(initialAppName: String = "Facebook") {
+        let cleaned = initialAppName.trimmingCharacters(in: .whitespacesAndNewlines)
+        _selectedAppName = State(initialValue: cleaned.isEmpty ? "Facebook" : cleaned)
     }
-    
-    let steps: [GuideStep] = [
-        GuideStep(
-            id: 1,
-            title: "Mở ứng dụng Phím Tắt (Shortcuts)",
-            description: "Tìm và mở app 'Phím tắt' (Shortcuts) có sẵn trên iPhone của bạn.",
-            iconName: "square.stack.3d.up.fill",
-            color: AppColors.cyan
-        ),
-        GuideStep(
-            id: 2,
-            title: "Tạo Tự Động Hóa Mới (Automation)",
-            description: "Chuyển sang tab 'Tự động hóa' ở thanh dưới cùng và nhấn nút (+) hoặc 'Tạo mục tự động hóa cá nhân'.",
-            iconName: "plus.circle.fill",
-            color: AppColors.emerald
-        ),
-        GuideStep(
-            id: 3,
-            title: "Chọn điều kiện: Ứng Dụng (App)",
-            description: "Cuộn xuống chọn 'Ứng dụng' -> Chọn danh sách app bạn muốn khóa (Safari, Messenger, Ảnh, Zalo...) -> Tích chọn 'Khi được mở'.",
-            iconName: "app.badge.checkmark.fill",
-            color: AppColors.amber
-        ),
-        GuideStep(
-            id: 4,
-            title: "Đặt 'Chạy ngay lập tức' (Run Immediately)",
-            description: "Chọn tùy chọn 'Chạy ngay lập tức' và tắt 'Thông báo khi chạy' để màn hình khóa kích hoạt mượt mà nhất.",
-            iconName: "bolt.fill",
-            color: AppColors.purple
-        ),
-        GuideStep(
-            id: 5,
-            title: "Thêm tác vụ: Mở AppLock hoặc Mở URL",
-            description: "Chọn hành động 'Mở ứng dụng' -> Chọn 'AppLock' (hoặc chọn 'Mở URL' và dán link 'applock://lock?app=TênApp' để hiện chính xác tên ứng dụng bị khóa).",
-            iconName: "shield.lefthalf.filled",
-            color: AppColors.cyan
-        )
-    ]
-    
-    public init() {}
     
     public var body: some View {
         ZStack {
@@ -59,19 +22,17 @@ public struct ShortcutsGuideView: View {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Hướng dẫn khóa tức thì")
+                        Text("Kích hoạt Khóa Thực Tế iOS")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
-                        Text("Tự động hóa với Apple Shortcuts")
-                            .font(.system(size: 13))
-                            .foregroundColor(AppColors.textSecondary)
+                        Text("Chặn tức thì • Mở khóa tự vào thẳng \(selectedAppName)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(AppColors.cyan)
                     }
                     
                     Spacer()
                     
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 26))
                             .foregroundColor(AppColors.textSecondary)
@@ -79,90 +40,129 @@ public struct ShortcutsGuideView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
                 
                 ScrollView {
-                    VStack(spacing: 16) {
-                        // Notice card
-                        GlassCard {
-                            HStack(spacing: 12) {
-                                Image(systemName: "sparkles")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(AppColors.amber)
-                                
-                                Text("Khóa ứng dụng tức thì bằng tính năng Phím Tắt của Apple giúp AppLock hoạt động trên mọi phiên bản iOS mà không cần Jailbreak hay cài đặt phức tạp.")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(AppColors.textPrimary)
-                            }
-                            .padding(14)
-                        }
-                        
-                        // Steps list
-                        ForEach(steps) { step in
-                            GlassCard {
-                                HStack(alignment: .top, spacing: 14) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(step.color.opacity(0.15))
-                                            .frame(width: 40, height: 40)
-                                        
-                                        Image(systemName: step.iconName)
-                                            .font(.system(size: 18))
-                                            .foregroundColor(step.color)
+                    VStack(spacing: 14) {
+                        // Quick select target app
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("CHỌN ỨNG DỤNG BẠN MUỐN KHÓA:")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(AppColors.textSecondary)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(quickApps, id: \.self) { app in
+                                        let active = selectedAppName == app
+                                        Button(action: {
+                                            selectedAppName = app
+                                            HapticManager.shared.selection()
+                                        }) {
+                                            Text(app)
+                                                .font(.system(size: 13, weight: .bold))
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 7)
+                                                .background(active ? AppColors.cyan : AppColors.cardBackground)
+                                                .foregroundColor(active ? .black : AppColors.textPrimary)
+                                                .cornerRadius(8)
+                                        }
                                     }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Bước \(step.id): \(step.title)")
-                                            .font(.system(size: 15, weight: .bold))
-                                            .foregroundColor(AppColors.textPrimary)
-                                        
-                                        Text(step.description)
-                                            .font(.system(size: 13))
-                                            .foregroundColor(AppColors.textSecondary)
-                                    }
-                                    
-                                    Spacer()
                                 }
-                                .padding(16)
                             }
                         }
                         
-                        // URL Scheme example card
-                        GlassCard {
+                        // Visual Formula Preview Card
+                        GlassCard(
+                            cornerRadius: 14,
+                            borderColor: AppColors.cyan.opacity(0.45),
+                            backgroundColor: AppColors.backgroundSecondary
+                        ) {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
-                                    Image(systemName: "link.circle.fill")
+                                    Image(systemName: "cpu.fill")
                                         .foregroundColor(AppColors.cyan)
-                                    Text("Link URL Scheme để kích hoạt khóa:")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(AppColors.textPrimary)
+                                    Text("CÔNG THỨC CHỐNG LẶP VÔ HẠN (CHỈ 3 DÒNG):")
+                                        .font(.system(size: 12, weight: .heavy))
+                                        .foregroundColor(AppColors.cyan)
                                 }
                                 
-                                Text("applock://lock?app=TênỨngDụng")
-                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(AppColors.cyan)
-                                    .padding(8)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(AppColors.backgroundSecondary)
-                                    .cornerRadius(8)
-                                
-                                Button(action: {
-                                    UIPasteboard.general.string = "applock://lock?app=Safari"
-                                    HapticManager.shared.notification(.success)
-                                }) {
-                                    HStack {
-                                        Image(systemName: "doc.on.doc.fill")
-                                        Text("Sao chép link mẫu (Safari)")
-                                    }
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(AppColors.emerald)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    codeLine(num: "1", text: "Kiểm tra cần khóa \"\(selectedAppName)\"", highlight: AppColors.cyan)
+                                    codeLine(num: "2", text: "Nếu [Kết quả Kiểm tra]", highlight: AppColors.amber)
+                                    codeLine(num: "3", text: "    ↳ Mở ứng dụng [AppLock]", highlight: AppColors.emerald)
+                                    codeLine(num: "4", text: "Kết thúc Nếu", highlight: AppColors.textSecondary)
                                 }
-                                .padding(.top, 4)
+                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(AppColors.background)
+                                .cornerRadius(10)
+                                
+                                Text("• Khi bấm vào \(selectedAppName) -> Hiện khóa AppLock ngay lập tức.\n• Khi nhập đúng PIN / Face ID -> Tự động mở thẳng vào \(selectedAppName) mà không bị khóa lặp lại!\n• Khi bạn tắt công tắc \(selectedAppName) trong AppLock -> Tự động cho qua không hỏi mật khẩu!")
+                                    .font(.system(size: 11.5))
+                                    .foregroundColor(AppColors.textSecondary)
                             }
                             .padding(14)
                         }
                         
-                        // Quick open shortcuts button
+                        // 4 Clear Steps
+                        stepCard(
+                            step: 1,
+                            title: "Mở tab Tự động hóa (Automation)",
+                            desc: "Bấm nút 'Mở ứng dụng Phím Tắt' bên dưới -> Chọn tab 'Tự động hóa' ở thanh dưới cùng -> Bấm dấu (+) góc trên bên phải.",
+                            icon: "plus.circle.fill",
+                            color: AppColors.cyan
+                        )
+                        
+                        stepCard(
+                            step: 2,
+                            title: "Chọn điều kiện mở \(selectedAppName)",
+                            desc: "Tìm chọn mục 'Ứng dụng' -> Bấm 'Chọn' và tích '\(selectedAppName)' -> Đảm bảo chọn 'Được mở' và TÍCH CHỌN 'Chạy ngay lập tức' (Run Immediately) -> Bấm 'Tiếp' -> Chọn 'Tác vụ trống mới' (New Blank Automation).",
+                            icon: "bolt.fill",
+                            color: AppColors.amber
+                        )
+                        
+                        stepCard(
+                            step: 3,
+                            title: "Thêm 'Kiểm tra cần khóa ứng dụng'",
+                            desc: "Bấm 'Thêm tác vụ' -> Gõ tìm 'AppLock' -> Chọn hành động 'Kiểm tra cần khóa ứng dụng' -> Chạm vào chữ Facebook màu xanh và điền '\(selectedAppName)'.",
+                            icon: "shield.checkered",
+                            color: AppColors.purple
+                        )
+                        
+                        stepCard(
+                            step: 4,
+                            title: "Thêm lệnh 'Nếu' -> 'Mở AppLock'",
+                            desc: "Gõ tìm lệnh 'Nếu' (If) vào ngay bên dưới -> Gõ tìm tiếp 'Mở ứng dụng', chọn 'AppLock', rồi giữ kéo dòng 'Mở AppLock' đặt NẰM GIỮA dòng 'Nếu' và 'Kết thúc Nếu' -> Bấm 'Xong'!",
+                            icon: "checkmark.seal.fill",
+                            color: AppColors.emerald
+                        )
+                        
+                        // Copy App Name helper
+                        Button(action: {
+                            UIPasteboard.general.string = selectedAppName
+                            copiedName = true
+                            HapticManager.shared.notification(.success)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                copiedName = false
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: copiedName ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                                Text(copiedName ? "Đã sao chép tên '\(selectedAppName)'" : "Sao chép nhanh tên '\(selectedAppName)'")
+                            }
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(AppColors.cyan)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(AppColors.cardBackground)
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(AppColors.cyan.opacity(0.35), lineWidth: 1)
+                            )
+                        }
+                        
+                        // Open Shortcuts App Button
                         Button(action: {
                             if let url = URL(string: "shortcuts://") {
                                 UIApplication.shared.open(url)
@@ -170,17 +170,78 @@ public struct ShortcutsGuideView: View {
                         }) {
                             HStack {
                                 Image(systemName: "arrow.up.right.square.fill")
-                                Text("Mở ứng dụng Phím Tắt ngay")
+                                Text("Mở ứng dụng Phím Tắt (Shortcuts) ngay")
                             }
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(CyberButtonStyle(primaryColor: AppColors.cyan))
-                        .padding(.top, 8)
-                        .padding(.bottom, 24)
+                        .padding(.top, 4)
+                        
+                        // Confirm Done Button
+                        Button(action: {
+                            appLockManager.isAutomationVerified = true
+                            appLockManager.saveSettings()
+                            HapticManager.shared.notification(.success)
+                            dismiss()
+                        }) {
+                            HStack {
+                                Image(systemName: "checkmark.shield.fill")
+                                Text("Tôi đã cài đặt xong — Bật trạng thái Bảo vệ")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(AppColors.emerald)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(AppColors.emerald.opacity(0.14))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(AppColors.emerald.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        .padding(.bottom, 28)
                     }
                     .padding(.horizontal, 20)
                 }
             }
+        }
+    }
+    
+    private func codeLine(num: String, text: String, highlight: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(num)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(AppColors.textMuted)
+            Text(text)
+                .font(.system(size: 12.5, weight: .bold, design: .monospaced))
+                .foregroundColor(highlight)
+        }
+    }
+    
+    private func stepCard(step: Int, title: String, desc: String, icon: String, color: Color) -> some View {
+        GlassCard {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(color)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Bước \(step): \(title)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(desc)
+                        .font(.system(size: 12.5))
+                        .foregroundColor(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
         }
     }
 }

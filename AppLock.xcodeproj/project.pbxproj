@@ -21,6 +21,7 @@
 		AA1000122C00000100000001 /* VaultManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000122C00000100000001 /* VaultManager.swift */; };
 		AA1000132C00000100000001 /* ScreenTimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000132C00000100000001 /* ScreenTimeManager.swift */; };
 		AA1000142C00000100000001 /* AppLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000142C00000100000001 /* AppLockManager.swift */; };
+		AA1000332C00000100000001 /* AppLockIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000332C00000100000001 /* AppLockIntents.swift */; };
 		AA1000152C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000152C00000100000001 /* GlassCard.swift */; };
 		AA1000162C00000100000001 /* CyberHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000162C00000100000001 /* CyberHeader.swift */; };
 		AA1000322C00000100000001 /* AsyncThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1000322C00000100000001 /* AsyncThumbnailView.swift */; };
@@ -56,6 +57,7 @@
 		BB1000122C00000100000001 /* VaultManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultManager.swift; sourceTree = "<group>"; };
 		BB1000132C00000100000001 /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeManager.swift; sourceTree = "<group>"; };
 		BB1000142C00000100000001 /* AppLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockManager.swift; sourceTree = "<group>"; };
+		BB1000332C00000100000001 /* AppLockIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockIntents.swift; sourceTree = "<group>"; };
 		BB1000152C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		BB1000162C00000100000001 /* CyberHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyberHeader.swift; sourceTree = "<group>"; };
 		BB1000322C00000100000001 /* AsyncThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncThumbnailView.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 				BB1000122C00000100000001 /* VaultManager.swift */,
 				BB1000132C00000100000001 /* ScreenTimeManager.swift */,
 				BB1000142C00000100000001 /* AppLockManager.swift */,
+				BB1000332C00000100000001 /* AppLockIntents.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -304,6 +307,7 @@
 				AA1000122C00000100000001 /* VaultManager.swift in Sources */,
 				AA1000132C00000100000001 /* ScreenTimeManager.swift in Sources */,
 				AA1000142C00000100000001 /* AppLockManager.swift in Sources */,
+				AA1000332C00000100000001 /* AppLockIntents.swift in Sources */,
 				AA1000152C00000100000001 /* GlassCard.swift in Sources */,
 				AA1000162C00000100000001 /* CyberHeader.swift in Sources */,
 				AA1000322C00000100000001 /* AsyncThumbnailView.swift in Sources */,
@@ -383,8 +387,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AppLock/AppLock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = AppLock/Info.plist;
@@ -396,7 +401,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.guardio.applock;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -412,8 +417,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AppLock/AppLock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = AppLock/Info.plist;
@@ -425,7 +431,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.guardio.applock;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

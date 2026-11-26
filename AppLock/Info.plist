@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -32,6 +32,28 @@
 				<string>applock</string>
 			</array>
 		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fb</string>
+		<string>fb-messenger</string>
+		<string>zalo</string>
+		<string>instagram</string>
+		<string>snssdk1180</string>
+		<string>snssdk1233</string>
+		<string>tiktok</string>
+		<string>youtube</string>
+		<string>discord</string>
+		<string>shopeevn</string>
+		<string>shopee</string>
+		<string>tg</string>
+		<string>googlegmail</string>
+		<string>googlechrome</string>
+		<string>locket</string>
+		<string>freefire</string>
+		<string>momo</string>
+		<string>photos-redirect</string>
+		<string>shortcuts</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
