@@ -65,6 +65,12 @@ public final class AppLockManager: ObservableObject {
     
     private var didEnterBackground: Bool = false
     private var toastWorkItem: DispatchWorkItem? = nil
+    private var graceExpiryWorkItem: DispatchWorkItem? = nil
+    
+    private var unlockedPassFileURL: URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("unlocked_pass.txt")
+    }
     
     private init() {
         let defaults = UserDefaults.standard
@@ -154,6 +160,7 @@ public final class AppLockManager: ObservableObject {
         // Always require authentication or setup at launch
         self.isShowingLockOverlay = true
         self.isAppUnlocked = false
+        syncUnlockedPassFile()
     }
     
     // Save state helper
@@ -201,13 +208,34 @@ public final class AppLockManager: ObservableObject {
     
     // Re-lock all external apps immediately
     public func relockExternalAppsNow() {
+        graceExpiryWorkItem?.cancel()
         unlockedGraceUntil = nil
         UserDefaults.standard.removeObject(forKey: Keys.unlockedGraceUntil)
+        syncUnlockedPassFile()
         ScreenTimeManager.shared.resumeShields()
         if isVibrationEnabled {
             HapticManager.shared.notification(.success)
         }
         showToast("Đã kích hoạt khóa lại toàn bộ ứng dụng!")
+    }
+    
+    private func syncUnlockedPassFile() {
+        graceExpiryWorkItem?.cancel()
+        if let until = unlockedGraceUntil, until > Date() {
+            try? "UNLOCKED".write(to: unlockedPassFileURL, atomically: true, encoding: .utf8)
+            let remaining = until.timeIntervalSinceNow
+            let item = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                try? FileManager.default.removeItem(at: self.unlockedPassFileURL)
+                Task { @MainActor in
+                    self.unlockedGraceUntil = nil
+                }
+            }
+            graceExpiryWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: item)
+        } else {
+            try? FileManager.default.removeItem(at: unlockedPassFileURL)
+        }
     }
     
     public func showToast(_ message: String) {
@@ -255,6 +283,7 @@ public final class AppLockManager: ObservableObject {
             let graceDate = Date().addingTimeInterval(TimeInterval(unlockGraceSeconds))
             self.unlockedGraceUntil = graceDate
             UserDefaults.standard.set(graceDate.timeIntervalSince1970, forKey: Keys.unlockedGraceUntil)
+            syncUnlockedPassFile()
         }
         
         withAnimation(.spring()) {
@@ -502,12 +531,6 @@ public final class AppLockManager: ObservableObject {
             } else if let host = components.host, !host.isEmpty && host.lowercased() != "lock" {
                 targetAppName = host
             }
-        }
-        
-        // Nếu đang trong thời gian mở khóa tạm thời, tự động quay lại ứng dụng mục tiêu ngay tránh lặp!
-        if isWithinGracePeriod {
-            openExternalAppIfPossible(named: targetAppName)
-            return
         }
         
         self.currentLockedAppTarget = targetAppName

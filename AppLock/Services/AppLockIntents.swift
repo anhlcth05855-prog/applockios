@@ -4,9 +4,8 @@ import AppIntents
 @available(iOS 16.0, *)
 struct CheckAppLockIntent: AppIntent {
     static var title: LocalizedStringResource = "Kiểm tra cần khóa ứng dụng"
-    static var description = IntentDescription("Kiểm tra xem ứng dụng đang mở (VD: Facebook, Zalo) có cần hiện màn hình khóa AppLock hay không. Trả về Đúng nếu cần khóa, trả về Sai nếu người dùng vừa mở khóa hợp lệ (tránh lặp vô hạn).")
+    static var description = IntentDescription("Kiểm tra xem ứng dụng đang mở (VD: Facebook, Zalo) có cần hiện màn hình khóa AppLock hay không. Trả về Đúng nếu cần khóa, trả về Sai nếu vừa mở khóa hợp lệ.")
     
-    // Chạy ngầm siêu tốc, không tự động nhảy sang AppLock khi đã mở khóa
     static var openAppWhenRun: Bool = false
     
     @Parameter(title: "Tên ứng dụng (VD: Facebook)", default: "Facebook")
@@ -41,5 +40,20 @@ struct LockAppImmediatelyIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         _ = AppLockManager.shared.forceInterceptLock(appName: appName)
         return .result()
+    }
+}
+
+@available(iOS 16.0, *)
+struct AppLockShortcutsProvider: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: CheckAppLockIntent(),
+            phrases: [
+                "Kiểm tra khóa ứng dụng bằng \(.applicationName)",
+                "Bảo vệ ứng dụng với \(.applicationName)"
+            ],
+            shortTitle: "Kiểm tra Khóa App",
+            systemImageName: "checkmark.shield.fill"
+        )
     }
 }
